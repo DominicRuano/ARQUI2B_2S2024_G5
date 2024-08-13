@@ -7,8 +7,8 @@ float humidity = 50;      // Humedad inicial
 float[] temperatures = new float[50];  // Historial de temperaturas
 float[] humidities = new float[50];    // Historial de humedades
 int tempIndex = 0;
-float TempMax = 40;
-float HumidityMax = 40;
+float TempMax = 100;
+float HumidityMax = 100;
 
 Serial myPort;  // Objeto Serial para la comunicación
 
@@ -33,7 +33,7 @@ void setup() {
   plotHumidity.setTitleText("Humidity History");
   
    String portName = Serial.list()[0]; 
-  myPort = new Serial(this, portName, 9600);
+  myPort = new Serial(this, "/dev/ttyACM0", 9600);
   
 }
 
@@ -48,6 +48,7 @@ void draw() {
       if (values.length == 2) {
         humidity = float(values[0]);
         temperature = float(values[1]);
+        println("Humedad: ", humidity, " | Temperatura: ", temperature);
       }
     }
   }
@@ -68,11 +69,11 @@ void humiGraph(){
   plotHumidity.defaultDraw();
   
   // Actualizar los datos de Humedad
-  humidity = map(mouseX, 0, width, 0, 100);     // Simular humedad con la posición del mouse
+  //humidity = map(humidity, 0, width, 0, 100);     // Simular humedad con la posición del mouse
 }
 
 void drawHygrometer(float humidity) {
-  float angle = map(humidity, 0, 100, 0, 2*PI);  // Mapea la humedad a un ángulo
+  float angle = map(humidity, 0, HumidityMax, 0, 2*PI);  // Mapea la humedad a un ángulo
   
   // Dibujar el fondo del medidor
   fill(200);
@@ -107,7 +108,7 @@ void TempGraph(){
   plotTemperature.defaultDraw();
   
   // Actualizar los datos de temperatura
-  temperature = map(mouseY, height, 0, 0, 40);  // Simular temperatura con la posición del mouse
+  //temperature = map(mouseY, height, 0, 0, 40);  // Simular temperatura con la posición del mouse
 }
 
 void drawThermometer() {
