@@ -31,10 +31,13 @@ void loop() {
 
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
 
-    Serial.print("CO2: ");
+    Serial.print("22.5");
+    Serial.print(",");
+    Serial.print("16");
+    Serial.print(",");
     Serial.println(ppmCO2); 
 
-    delay(200);
+    delay(2000);
 }
 
 float CalcularResistenciaSensor(int valor_adc) {
