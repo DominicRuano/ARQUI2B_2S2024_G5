@@ -1,3 +1,4 @@
+import processing.serial.*;
 import grafica.*;
 
 GPlot plotTemperature, plotHumidity;
@@ -8,6 +9,8 @@ float[] humidities = new float[50];    // Historial de humedades
 int tempIndex = 0;
 float TempMax = 40;
 float HumidityMax = 40;
+
+Serial myPort;  // Objeto Serial para la comunicación
 
 void setup() {
   size(1000, 600);
@@ -28,10 +31,27 @@ void setup() {
   plotHumidity.getXAxis().setAxisLabelText("Time (s)");
   plotHumidity.getYAxis().setAxisLabelText("Humidity (%)");
   plotHumidity.setTitleText("Humidity History");
+  
+   String portName = Serial.list()[0]; 
+  myPort = new Serial(this, portName, 9600);
+  
 }
 
 void draw() {
   background(255);
+  
+    if (myPort.available() > 0) {
+    String inData = myPort.readStringUntil('\n');
+    if (inData != null) {
+      inData = trim(inData); // Eliminar espacios en blanco
+      String[] values = split(inData, ',');
+      if (values.length == 2) {
+        humidity = float(values[0]);
+        temperature = float(values[1]);
+      }
+    }
+  }
+  
   TempGraph();
   humiGraph();
 
