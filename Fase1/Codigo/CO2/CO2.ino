@@ -31,11 +31,18 @@ void loop() {
 
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
 
-    Serial.print("22.5");
+    Serial.print("22.5"); // simulando el de humendad
+    Serial.print(",");  
+    Serial.print("16"); //simulando el de temperatura
     Serial.print(",");
-    Serial.print("16");
-    Serial.print(",");
-    Serial.println(ppmCO2); 
+    Serial.println(ppmCO2);  //salida del sensor de CO2
+
+    //para agregar más sensores es necesario agregar más líneas como la anterior
+    /*
+        Serial.print(ppmCO2);
+        Serial.print(",");
+        Serial.println(NUEVO SENSOR);
+    */
 
     delay(2000);
 }
