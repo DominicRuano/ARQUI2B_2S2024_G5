@@ -6,8 +6,8 @@ float humidity = 50;      // Humedad inicial
 float[] temperatures = new float[50];  // Historial de temperaturas
 float[] humidities = new float[50];    // Historial de humedades
 int tempIndex = 0;
-float TempMax = 100;
-float HumidityMax = 100;
+float TempMax = 40;
+float HumidityMax = 40;
 
 void setup() {
   size(1000, 600);
