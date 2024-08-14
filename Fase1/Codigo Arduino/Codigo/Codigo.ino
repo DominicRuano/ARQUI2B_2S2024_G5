@@ -1,7 +1,8 @@
 const int ledCalibracion = 13;                      
 const int PIN_MQ = A0;                                
 int VALOR_RL = 1;                                     
-float FACTOR_AIRE_LIMPIO_RO = 9.75;                     
+float FACTOR_AIRE_LIMPIO_RO = 9.75;   
+int ldrPin = A1;                      // Pin LDR                  
 
 int TIEMPOS_MUESTRA_CALIBRACION = 10;                  
 int INTERVALO_MUESTRA_CALIBRACION = 100;               
@@ -35,7 +36,10 @@ void loop() {
     Serial.print(",");  
     Serial.print("16"); //simulando el de temperatura
     Serial.print(",");
-    Serial.println(ppmCO2);  //salida del sensor de CO2
+    Serial.print(ppmCO2);  //salida del sensor de CO2
+    Serial.print(",");
+    Serial.println("700"); 
+
 
     //para agregar más sensores es necesario agregar más líneas como la anterior
     /*
@@ -43,6 +47,8 @@ void loop() {
         Serial.print(",");
         Serial.println(NUEVO SENSOR);
     */
+
+    //SensorCantidadLuz(); //LDR
 
     delay(2000);
 }
@@ -83,4 +89,13 @@ long ObtenerPorcentajeGas(float rs_ro_ratio, int id_gas) {
 
 long CalcularPorcentaje(float rs_ro_ratio, float *curva) {
     return (pow(10, ((log(rs_ro_ratio) - curva[1]) / curva[2]) + curva[0]));
+}
+
+
+//LDR
+void SensorCantidadLuz() {
+  int valorLuz = analogRead(ldrPin);  // Lee el valor analógico del LDR
+  Serial.println(valorLuz);           // Envía el valor al puerto serial
+
+  delay(100); 
 }

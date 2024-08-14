@@ -13,11 +13,25 @@ float TempMax = 100;
 float HumidityMax = 100;
 float CO2Max = 5000;       // Máximo valor esperado para CO2 en ppm
 
+//LDR
+float valorLuzSuavizado = 0;               // animacion ldr
+PGraphics pg;                              // Dibuja una región específica
+GPlot plotLuz;                             // Objeto para la gráfica
+
+float tamanoLuna = 50;                    // Tamaño de la luna
+float tamanoSol = 50;                     // Tamaño del sol
+float[] lightLevels = new float[50];       // Historial nivel de luz para el gráfico
+
+String estadoLDR = "apagado";              // Variable para el estado del LDR 
+String estadoLDRAnterior = "apagado"; 
+int valorLuz = 0 ;                      
+
 Serial myPort;  // Objeto Serial para la comunicación
 
 void setup() {
-  size(1000, 600);
+  size(1000, 800);                           //tamanio ventana principal     
   smooth();
+  //println(Serial.list());
   
   // Configuración del gráfico de temperatura
   plotTemperature = new GPlot(this);
@@ -43,7 +57,10 @@ void setup() {
   plotCO2.getYAxis().setAxisLabelText("CO2 (ppm)");
   plotCO2.setTitleText("CO2 History");
   
-  String portName = Serial.list()[1]; 
+  // configuracion del gráfico LDR
+  configurarGraficoLuz();                    
+  
+  String portName = Serial.list()[0]; 
   myPort = new Serial(this, portName, 9600);
 }
 
@@ -55,15 +72,17 @@ void draw() {
     if (inData != null) {
       inData = trim(inData); // Eliminar espacios en blanco
       String[] values = split(inData, ',');
-      if (values.length == 3) {
+      if (values.length == 4) {
         humidity = float(values[0]);
         temperature = float(values[1]);
         co2 = float(values[2]);
+        valorLuz = int(values[3]);
         //println("Humedad: ", humidity, " | Temperatura: ", temperature, " | CO2: ", co2);
       }
     }
   }
   
+  CantidadLuminosidad();  // procesa la grafica y animacion LDR
   TempGraph();
   humiGraph();
   co2Graph();
@@ -228,4 +247,118 @@ void drawCO2Meter() {
   fill(0);
   textAlign(CENTER, CENTER);
   text(co2 + " ppm", 75, 550);
+}
+
+// ========= LDR ===========
+void CantidadLuminosidad() {
+  // Actualizar el PGraphics con el método LuzAmbiente
+  pg.beginDraw(); 
+  LuzAmbiente();                              // Actualiza el PGraphics
+  pg.endDraw();
+  
+  image(pg, 460, 330);                        // ====== Posición del recuadro del sol y la luna ====== x,y
+  
+  updateLDRData();                            // Actualizar el historial de LDR
+  plotLuz.setPoints(lightLevelsToGPoints());  // Actualizar puntos de la gráfica
+  plotLuz.beginDraw();
+  plotLuz.drawBackground();
+  plotLuz.drawBox();
+  plotLuz.drawXAxis();
+  plotLuz.drawYAxis();
+  plotLuz.drawTitle();
+  plotLuz.drawLines();                         // Dibujar la línea del historial de luz
+  plotLuz.endDraw();
+}
+
+void configurarGraficoLuz() {
+  
+  pg = createGraphics(95, 230);               // ====== Tamaño del recuadro del sol y la luna ======= x,y
+  
+  // Configuración del gráfico de luz
+  plotLuz = new GPlot(this);
+  plotLuz.setPos(560, 320);                    // ====== Posición del gráfico ====== x,y
+  plotLuz.setDim(150, 200);                    // ====== Dimensiones del gráfico ======
+  plotLuz.getXAxis().setAxisLabelText("Tiempo (s)");
+  plotLuz.getYAxis().setAxisLabelText("Nivel de Luz");
+  plotLuz.setYLim(0, 1023);                    // Establecer los límites del eje Y
+  plotLuz.setTitleText("Light Level History");
+  plotLuz.setPoints(lightLevelsToGPoints());   // Cargar puntos iniciales
+}
+
+void LuzAmbiente() {
+  valorLuzSuavizado = lerp(valorLuzSuavizado, valorLuz, 0.1); // Suaviza el valor de luz
+
+  // Actualiza el estado del LDR
+  actualizarEstadoLDR();
+  
+  float t = map(valorLuzSuavizado, 0, 1023, 0, 1); // Mapea el valor de luz a un rango de 0 a 1 para interpolación
+
+  // Colores de día y noche
+  color fondoDia = color(135, 206, 250);          // Azul claro
+  color fondoNoche = color(0, 0, 30);             // Negro
+  color sol = color(255, 204, 0);                 // Amarillo
+  color luna = color(255);                        // Blanco
+
+  // Interpolación de colores
+  color fondoActual = lerpColor(fondoNoche, fondoDia, t);
+  color circuloActual = lerpColor(luna, sol, t);
+
+  pg.background(fondoActual);                     // Dibuja el fondo en el recuadro
+
+  float transition = smoothStep(0.4, 0.6, t);     // Transición suave
+  float desplazamiento = lerp(50, 0, transition); // Desplazamiento para la media luna
+
+  pg.fill(circuloActual);
+  pg.noStroke();
+
+  if (t < 0.5) { // Dibujar media luna en transición
+    pg.ellipse(pg.width / 2, pg.height / 2, tamanoLuna, tamanoLuna); // Círculo principal para la luna
+    pg.fill(fondoActual);                                            // Color del fondo para "recortar" la media luna
+    pg.ellipse(pg.width / 2 + desplazamiento, pg.height / 2, tamanoLuna, tamanoLuna); // Círculo para recortar
+  } else {
+    pg.ellipse(pg.width / 2, pg.height / 2, tamanoSol, tamanoSol); // Dibuja círculo completo del sol
+  }
+}
+
+// Función para una interpolación suave
+float smoothStep(float edge0, float edge1, float x) {
+  float t = constrain((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+  return t * t * (3.0 - 2.0 * t);
+}
+
+void actualizarEstadoLDR() {
+  // Define los rangos de valores para el estado del LDR
+  float rangoInferior = 400; 
+  float rangoSuperior = 1023; 
+
+  // Determina el estado actual del LDR
+  String estadoLDRActual;
+  if (valorLuzSuavizado >= rangoInferior && valorLuzSuavizado <= rangoSuperior) {
+    estadoLDRActual = "encendido";
+  } else {
+    estadoLDRActual = "apagado";
+  }
+
+  
+  if (!estadoLDRActual.equals(estadoLDRAnterior)) { // Actualiza solo si el estado ha cambiado
+    estadoLDR = estadoLDRActual;
+    estadoLDRAnterior = estadoLDRActual;
+    println("Estado del LDR cambiado a: " + estadoLDR);
+  }
+}
+
+void updateLDRData() {
+  for (int i = 0; i < lightLevels.length - 1; i++) {
+    lightLevels[i] = lightLevels[i + 1];
+  }
+  lightLevels[lightLevels.length - 1] = valorLuzSuavizado;
+}
+
+// Convierte el historial de luz a un arreglo de GPoints para la gráfica
+GPointsArray lightLevelsToGPoints() {
+  GPointsArray points = new GPointsArray(lightLevels.length);
+  for (int i = 0; i < lightLevels.length; i++) {
+    points.add(i, lightLevels[i]);
+  }
+  return points;
 }
