@@ -291,7 +291,7 @@ void LuzAmbiente() {
   // Actualiza el estado del LDR
   actualizarEstadoLDR();
   
-  float t = map(valorLuzSuavizado, 0, 1023, 0, 1); // Mapea el valor de luz a un rango de 0 a 1 para interpolación
+  float t = map(valorLuzSuavizado, 50, 100, 0, 1); // Mapea el valor de luz a un rango de 0 a 1 para interpolación
 
   // Colores de día y noche
   color fondoDia = color(135, 206, 250);          // Azul claro
@@ -328,8 +328,8 @@ float smoothStep(float edge0, float edge1, float x) {
 
 void actualizarEstadoLDR() {
   // Define los rangos de valores para el estado del LDR
-  float rangoInferior = 400; 
-  float rangoSuperior = 1023; 
+  float rangoInferior = 50; 
+  float rangoSuperior = 100; 
 
   // Determina el estado actual del LDR
   String estadoLDRActual;

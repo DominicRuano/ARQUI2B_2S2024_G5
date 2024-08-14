@@ -42,12 +42,14 @@ void loop() {
     long ppmCO2 = 0;
     int valorLuz = 0;
 
+    leerDHT11();    
+
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
 
-    Serial.print("22.5"); // simulando el de humendad
+    Serial.print(humedad); // simulando el de humendad
     Serial.print(",");  
-    Serial.print("16"); //simulando el de temperatura
+    Serial.print(temperatura); //simulando el de temperatura
     Serial.print(",");
     Serial.print(ppmCO2);  //salida del sensor de CO2
     Serial.print(",");
