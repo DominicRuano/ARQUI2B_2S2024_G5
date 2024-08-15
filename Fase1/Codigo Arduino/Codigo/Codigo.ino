@@ -1,3 +1,4 @@
+#include "DHT.h"
 const int ledCalibracion = 13;                      
 const int PIN_MQ = A0;                                
 int VALOR_RL = 1;                                     
@@ -10,12 +11,22 @@ int INTERVALO_MUESTRA_LECTURA = 50;
 int TIEMPOS_MUESTRA_LECTURA = 5;                      
 
 #define GAS_CO2 2    
+#define DHTPIN 3       // Pin donde está conectado el sensor DHT11
+#define DHTTYPE DHT11  // Tipo de sensor DHT
+
+DHT dht(DHTPIN, DHTTYPE);
+float humedad = 0;
+float temperatura = 0;
+
+
+
 
 float CO2[3] = {2.3, 0.53, -0.44};                                                    
 float Ro = 10;                 
 
 void setup() { 
     Serial.begin(9600);
+    dht.begin();
     pinMode(ledCalibracion, OUTPUT);
     digitalWrite(ledCalibracion, HIGH);                     
     Serial.println("Calibrando...");
@@ -27,10 +38,12 @@ void setup() {
     delay(1000);
 }
 
-void loop() {  
+void loop() { 
     long ppmCO2 = 0;
+    int valorLuz = 0;
 
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
+    valorLuz = SensorCantidadLuz();
 
     Serial.print("22.5"); // simulando el de humendad
     Serial.print(",");  
@@ -38,7 +51,7 @@ void loop() {
     Serial.print(",");
     Serial.print(ppmCO2);  //salida del sensor de CO2
     Serial.print(",");
-    Serial.println("700"); 
+    Serial.println(valorLuz); 
 
 
     //para agregar más sensores es necesario agregar más líneas como la anterior
@@ -93,9 +106,21 @@ long CalcularPorcentaje(float rs_ro_ratio, float *curva) {
 
 
 //LDR
-void SensorCantidadLuz() {
+int SensorCantidadLuz() {
   int valorLuz = analogRead(ldrPin);  // Lee el valor analógico del LDR
-  Serial.println(valorLuz);           // Envía el valor al puerto serial
 
-  delay(100); 
+  return valorLuz;
+}
+
+//dht
+void leerDHT11() {
+  humedad = dht.readHumidity();
+  temperatura = dht.readTemperature();
+
+  // Verificar si hay errores al leer el sensor
+  if (isnan(humedad) || isnan(temperatura)) {
+    Serial.println("Error al leer el sensor DHT11");
+    humedad = 0.0;
+    temperatura = 0.0;
+  }
 }
