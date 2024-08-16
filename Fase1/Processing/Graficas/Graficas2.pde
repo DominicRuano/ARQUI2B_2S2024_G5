@@ -60,7 +60,9 @@ void setup() {
   // configuracion del gráfico LDR
   configurarGraficoLuz();                    
   
-  String portName = Serial.list()[0]; 
+  // Comentar y descomentar segun sea necesario.
+  //String portName = Serial.list()[0];
+  String portName = "/dev/ttyACM0"; 
   myPort = new Serial(this, portName, 9600);
 }
 

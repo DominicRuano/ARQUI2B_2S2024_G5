@@ -80,7 +80,7 @@ float obtenerHumedad(){
   if(isnan(humedad)){
     Serial.println("No se logro obtener datos de HUMEDAD del sensor DHT11");
   }
-  else {
+  else {                                                                                                                                                                                                                                                                
     Serial.print("Humedad: ");
     Serial.print(humedad);
     Serial.println("%");
