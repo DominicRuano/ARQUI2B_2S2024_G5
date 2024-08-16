@@ -79,7 +79,7 @@ void draw() {
         temperature = float(values[1]);
         co2 = float(values[2]);
         valorLuz = int(values[3]);
-        //println("Humedad: ", humidity, " | Temperatura: ", temperature, " | CO2: ", co2);
+        println("Humedad: ", humidity, " | Temperatura: ", temperature, " | CO2: ", co2, " | Luz: ", valorLuz);
       }
     }
   }
@@ -134,7 +134,7 @@ void drawThermometer() {
   ellipse(75, 50, 50, 25);
   
   // Mercurio
-  float mercuryHeight = map(temperature, 0, TempMax, 0, TempMax*5);
+  float mercuryHeight = map(temperature, 0, TempMax, 0, TempMax*2);
   fill(map(temperature, 0, TempMax, 0, 255), 0, map(temperature, 0, TempMax, 255, 0));
   rect(50, 250 - mercuryHeight, 50, mercuryHeight);
   
@@ -345,7 +345,7 @@ void actualizarEstadoLDR() {
   if (!estadoLDRActual.equals(estadoLDRAnterior)) { // Actualiza solo si el estado ha cambiado
     estadoLDR = estadoLDRActual;
     estadoLDRAnterior = estadoLDRActual;
-    println("Estado del LDR cambiado a: " + estadoLDR);
+    //println("Estado del LDR cambiado a: " + estadoLDR);
   }
 }
 
