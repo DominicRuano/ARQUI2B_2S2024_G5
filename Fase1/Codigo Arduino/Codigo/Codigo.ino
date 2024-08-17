@@ -128,7 +128,7 @@ void loop() {
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
-    Colores();
+    //Colores();
 
     Serial.print(humedad); // simulando el de humendad
     Serial.print(",");  

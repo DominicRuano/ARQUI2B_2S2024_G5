@@ -115,8 +115,9 @@ void setup() {
   plotColors.getLayer("Blue").setLineColor(color(0, 0, 255));
   */
   
-  // Comentar y descomentar segun sea necesario.  String portName = "/dev/ttyACM0"; 
-  //myPort = new Serial(this, portName, 9600);
+  // Comentar y descomentar segun sea necesario.  
+  String portName = Serial.list()[0];
+  myPort = new Serial(this, portName, 9600);
 }
 
 void draw() {
