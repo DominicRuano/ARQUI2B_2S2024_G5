@@ -20,7 +20,7 @@ float[] infrarojoValues = new float[50];   // Historial de valores para infraroj
 int tempIndex = 0;
 float TempMax = 100;
 float HumidityMax = 100;
-float CO2Max = 5000;       // Máximo valor esperado para CO2 en pp
+float CO2Max = 10000000;       // Máximo valor esperado para CO2 en pp
 float colorpordefecto = 0;
 float temp = 0;
 
