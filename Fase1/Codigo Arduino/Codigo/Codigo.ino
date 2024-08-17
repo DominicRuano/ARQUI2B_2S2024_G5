@@ -66,7 +66,7 @@ void setup() {
   pinMode(buttonPin3, INPUT_PULLUP);
 
   //infrarrojo
-  pinMode(pinInfrarrojo, INPUT):
+  pinMode(pinInfrarrojo, INPUT);
 
   attachInterrupt(digitalPinToInterrupt(buttonPin1), boton1, FALLING);
   attachInterrupt(digitalPinToInterrupt(buttonPin2), boton2, FALLING);
