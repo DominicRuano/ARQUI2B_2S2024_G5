@@ -8,6 +8,7 @@ const int PIN_MQ = A0;
 int VALOR_RL = 1;                                     
 float FACTOR_AIRE_LIMPIO_RO = 9.75;   
 int ldrPin = A1;                      // Pin LDR                  
+const int pinInfrarrojo = 5;
 
 int TIEMPOS_MUESTRA_CALIBRACION = 10;                  
 int INTERVALO_MUESTRA_CALIBRACION = 100;               
@@ -36,6 +37,7 @@ int OpcionANT = 0;
 
 long ppmCO2 = 0;
 int valorLuz = 0;
+int valorInfrarrojo = 0;
 
 
 float CO2[3] = {2.3, 0.53, -0.44};                                                    
@@ -63,6 +65,9 @@ void setup() {
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(buttonPin3, INPUT_PULLUP);
 
+  //infrarrojo
+  pinMode(pinInfrarrojo, INPUT):
+
   attachInterrupt(digitalPinToInterrupt(buttonPin1), boton1, FALLING);
   attachInterrupt(digitalPinToInterrupt(buttonPin2), boton2, FALLING);
 
@@ -81,11 +86,13 @@ void boton2(){
 void loop() { 
     ppmCO2 = 0;
     valorLuz = 0;
+    valorInfrarrojo = 0;
 
     leerDHT11();    
 
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
+    valorInfrarrojo = Infrarrojo();
 
     Serial.print(humedad); // simulando el de humendad
     Serial.print(",");  
@@ -93,7 +100,9 @@ void loop() {
     Serial.print(",");
     Serial.print(ppmCO2);  //salida del sensor de CO2
     Serial.print(",");
-    Serial.println(valorLuz); 
+    Serial.print(valorLuz); 
+    Serial.print(",");
+    Serial.println(valorInfrarrojo);
 
 
     //para agregar más sensores es necesario agregar más líneas como la anterior
@@ -308,4 +317,13 @@ void lcdB3(){
     lcd.print( mensaje + "| " + String(ppmCO22));  
     Opcion2 = 0;
   }
+}
+
+
+
+int Infrarrojo(){
+
+  int valor = digitalRead(pinInfrarrojo);
+  return valor;
+
 }
