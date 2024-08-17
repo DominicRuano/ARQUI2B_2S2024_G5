@@ -8,7 +8,7 @@ const int PIN_MQ = A0;
 int VALOR_RL = 1;                                     
 float FACTOR_AIRE_LIMPIO_RO = 9.75;   
 int ldrPin = A1;                      // Pin LDR                  
-const int pinInfrarrojo = 5;
+const int pinInfrarrojo = 7;
 
 int TIEMPOS_MUESTRA_CALIBRACION = 10;                  
 int INTERVALO_MUESTRA_CALIBRACION = 100;               
@@ -38,10 +38,32 @@ int OpcionANT = 0;
 long ppmCO2 = 0;
 int valorLuz = 0;
 int valorInfrarrojo = 0;
-
+int rojoGlobal = 0;
+int azulGlobal = 0;
+int verdeGlobal = 0;
 
 float CO2[3] = {2.3, 0.53, -0.44};                                                    
-float Ro = 10;                 
+float Ro = 10;    
+
+
+//colores
+
+#define S0 8
+#define S1 9
+#define S2 12
+#define S3 11
+#define sensorSalida 10
+int frecuenciaRojo = 0;
+int frecuenciaVerde = 0;
+int frecuenciaAzul = 0;
+int Rojo_Frec = 0;
+int Verde_Frec = 0;
+int Azul_Frec = 0;
+int colorRojo;
+int colorVerde;
+int colorAzul;
+
+
 
 void setup() { 
   Serial.begin(9600);
@@ -71,6 +93,19 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(buttonPin1), boton1, FALLING);
   attachInterrupt(digitalPinToInterrupt(buttonPin2), boton2, FALLING);
 
+  //colores
+  //Defininiendo las salidas
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+
+  //Definiendo salidaSensor como entrada
+  pinMode(sensorSalida, INPUT);
+  
+  // Configura la escala de Frecuencia en 20%
+  digitalWrite(S0,HIGH);
+  digitalWrite(S1,LOW);
 
   delay(1000);
 }
@@ -93,6 +128,7 @@ void loop() {
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
+    Colores();
 
     Serial.print(humedad); // simulando el de humendad
     Serial.print(",");  
@@ -103,7 +139,13 @@ void loop() {
     Serial.print(valorLuz); 
     Serial.print(",");
     Serial.println(valorInfrarrojo);
-
+    
+    /*Serial.print(",");
+    Serial.print(rojoGlobal);
+    Serial.print(",");
+    Serial.print(verdeGlobal);
+    Serial.print(",");
+    Serial.println(azulGlobal);*/
 
     //para agregar más sensores es necesario agregar más líneas como la anterior
     /*
@@ -225,7 +267,7 @@ void lcdB1(){
     lcd.setCursor(0,1);
     lcd.print(String(humedad) + " | " + String(temperatura));  
     Opcion2 = 1;
-  }else{
+  }else if(Opcion2 == 1){
     lcd.print("Luz   | Gas");
     lcd.setCursor(0,1);
     String mensaje = String(valorLuz);
@@ -235,6 +277,15 @@ void lcdB1(){
     mensaje += " ";
     }
     lcd.print( mensaje + "| " + String(ppmCO2));  
+    Opcion2 =2;
+  }else if(Opcion2 == 2){
+    lcd.print("Infrarrojo");
+    lcd.setCursor(0,1);
+    if (valorInfrarrojo == 0){
+      lcd.print("Obstaculo");
+    }else{
+      lcd.print("Libre");
+    }
     Opcion2 = 0;
   }
 }
@@ -267,6 +318,12 @@ void lcdB2(){
   for (int i = 0; i < sizeof(ppmCO2); i++) {
     EEPROM.write(300 + i, bytePointer[i]);
   }
+  //infrarrojo en la eeprom
+  bytePointer = (byte*)(void*)&valorInfrarrojo;
+  for (int i=0; i<sizeof(valorInfrarrojo);i++){
+    EEPROM.write(400+i, bytePointer[i]);
+  }
+
 
   Opcion = 1;
 }
@@ -276,6 +333,7 @@ void lcdB3(){
   float temperatura2;
   long ppmCO22;
   int valorLuz2;
+  int valorInfrarrojo2;
 
   byte* bytePointer0 = (byte*)(void*)&humedad2;
   for (int i = 0; i < sizeof(humedad2); i++) {
@@ -297,6 +355,13 @@ void lcdB3(){
     bytePointer3[i] = EEPROM.read(300 + i);
   }
 
+  byte* bytePointer4 = (byte*)(void*)&valorInfrarrojo2;
+  for (int i=0; i<sizeof(valorInfrarrojo2);i++){
+    bytePointer4[i] = EEPROM.read(400+i);
+  }
+
+
+
   lcd.clear();
   lcd.setCursor(0,0);
 
@@ -305,7 +370,7 @@ void lcdB3(){
     lcd.setCursor(0,1);
     lcd.print(String(humedad2) + " | " + String(temperatura2));  
     Opcion2 = 1;
-  }else{
+  }else if(Opcion2 == 1){
     lcd.print("Luz   | Gas    G");
     lcd.setCursor(0,1);
     String mensaje = String(valorLuz2);
@@ -315,6 +380,15 @@ void lcdB3(){
     mensaje += " ";
     }
     lcd.print( mensaje + "| " + String(ppmCO22));  
+    Opcion2 = 2;
+  }else if(Opcion2 == 2){
+    lcd.print("Infrarrojo   G");
+    lcd.setCursor(0,1);
+    if (valorInfrarrojo2 == 0){
+      lcd.print("Obstaculo");
+    }else{
+      lcd.print("Libre");
+    }
     Opcion2 = 0;
   }
 }
@@ -327,3 +401,37 @@ int Infrarrojo(){
   return valor;
 
 }
+
+
+void Colores(){
+
+    // Configura el filtor ROJO para tomar lectura
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,LOW);
+
+  //Rojo_Frec= pulseIn(sensorSalida, LOW);
+  frecuenciaRojo = pulseIn(sensorSalida,LOW);
+  colorRojo = map(frecuenciaRojo,170,1115,255,0);
+
+  // Configura el filtor VERDE para tomar lectura
+  digitalWrite(S2,HIGH);
+  digitalWrite(S3,HIGH);
+  //Verde_Frec = pulseIn(sensorSalida, LOW);
+  frecuenciaVerde = pulseIn(sensorSalida, LOW);
+  colorVerde = map(frecuenciaVerde,100,199,255,0);
+  // Configura el filtor AZUL para tomar lectura
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,HIGH);
+
+//Azul_Frec = pulseIn(sensorSalida, LOW);
+  frecuenciaAzul = pulseIn(sensorSalida, LOW);
+  colorAzul = map(frecuenciaVerde,38,84,255,0);
+
+  //return colorRojo, colorVerde, colorAzul;
+  rojoGlobal = colorRojo;
+  verdeGlobal = colorVerde;
+  azulGlobal = colorAzul;
+
+}
+
+
