@@ -1,17 +1,28 @@
 import processing.serial.*;
 import grafica.*;
 
-GPlot plotTemperature, plotHumidity, plotCO2;
+GPlot plotTemperature, plotHumidity, plotCO2, plotColors, plotValues;
+int maxPoints = 50;  // Máximo número de puntos en la gráfica
 float temperature = 20;  // Temperatura inicial
 float humidity = 50;      // Humedad inicial
 float co2 = 10;          // Nivel de CO2 inicial
+float rojo = 10;
+float verde = 20;
+float azul = 30;
+float infrarojo = 0;
 float[] temperatures = new float[50];  // Historial de temperaturas
 float[] humidities = new float[50];    // Historial de humedades
 float[] co2Levels = new float[50];     // Historial de niveles de CO2
+float[] redValues = new float[50];    // Historial de valores para rojo
+float[] greenValues = new float[50];  // Historial de valores para verde
+float[] blueValues = new float[50];   // Historial de valores para azul
+float[] infrarojoValues = new float[50];   // Historial de valores para infrarojo
 int tempIndex = 0;
 float TempMax = 100;
 float HumidityMax = 100;
-float CO2Max = 5000;       // Máximo valor esperado para CO2 en ppm
+float CO2Max = 5000;       // Máximo valor esperado para CO2 en pp
+float colorpordefecto = 0;
+float temp = 0;
 
 //LDR
 float valorLuzSuavizado = 0;               // animacion ldr
@@ -29,9 +40,22 @@ int valorLuz = 0 ;
 Serial myPort;  // Objeto Serial para la comunicación
 
 void setup() {
-  size(1000, 800);                           //tamanio ventana principal     
+  size(1100, 610);                           //tamanio ventana principal     
   smooth();
   //println(Serial.list());
+  
+    // Configuración de la gráfica
+  plotValues = new GPlot(this);
+  plotValues.setPos(800, 200);  // Posición de la gráfica en la ventana
+  plotValues.setDim(200, 200);  // Dimensiones de la gráfica
+  plotValues.getXAxis().setAxisLabelText("Time (s)");
+  plotValues.getYAxis().setAxisLabelText("Obstuido");
+  plotValues.setTitleText("infrared Values");
+
+  // Inicializar la gráfica con algunos valores
+  for (int i = 0; i < maxPoints; i++) {
+    infrarojoValues[i] = 0;  // Generar valores aleatorios iniciales
+  }
   
   // Configuración del gráfico de temperatura
   plotTemperature = new GPlot(this);
@@ -51,19 +75,48 @@ void setup() {
   
   // Configuración del gráfico de CO2
   plotCO2 = new GPlot(this);
-  plotCO2.setPos(100, 300);  // Posición debajo del gráfico de temperatura
+  plotCO2.setPos(100, 320);  // Posición debajo del gráfico de temperatura
   plotCO2.setDim(150, 200);
   plotCO2.getXAxis().setAxisLabelText("Time (s)");
   plotCO2.getYAxis().setAxisLabelText("CO2 (ppm)");
   plotCO2.setTitleText("CO2 History");
   
   // configuracion del gráfico LDR
-  configurarGraficoLuz();                    
+  configurarGraficoLuz();
   
-  // Comentar y descomentar segun sea necesario.
-  //String portName = Serial.list()[0];
-  String portName = "/dev/ttyACM0"; 
-  myPort = new Serial(this, portName, 9600);
+    // Configuración del gráfico de colores (Rojo, Verde, Azul)
+  /*plotColors = new GPlot(this);
+  plotColors.setPos(800, 25);  // Posición de la gráfica en la ventana
+  plotColors.setDim(200, 200);  // Dimensiones de la gráfica
+  plotColors.getXAxis().setAxisLabelText("Sample Index");
+  plotColors.getYAxis().setAxisLabelText("Color Value");
+  plotColors.setTitleText("Red, Green, Blue Values");
+  
+    // Crear capas para cada color
+  GPointsArray redPoints = new GPointsArray();
+  GPointsArray greenPoints = new GPointsArray();
+  GPointsArray bluePoints = new GPointsArray();
+  
+  // Rellenar puntos con valores aleatorios para rojo, verde y azul
+  for (int i = 0; i < 50; i++) {
+    redPoints.add(i, colorpordefecto);
+    greenPoints.add(i, colorpordefecto);
+    bluePoints.add(i, colorpordefecto);
+  }
+  
+    // Añadir capas de color a la gráfica
+  plotColors.addLayer("Red", redPoints);
+  plotColors.addLayer("Green", greenPoints);
+  plotColors.addLayer("Blue", bluePoints);
+  
+  // Configurar colores de las líneas de las capas
+  plotColors.getLayer("Red").setLineColor(color(255, 0, 0));
+  plotColors.getLayer("Green").setLineColor(color(0, 255, 0));
+  plotColors.getLayer("Blue").setLineColor(color(0, 0, 255));
+  */
+  
+  // Comentar y descomentar segun sea necesario.  String portName = "/dev/ttyACM0"; 
+  //myPort = new Serial(this, portName, 9600);
 }
 
 void draw() {
@@ -74,11 +127,12 @@ void draw() {
     if (inData != null) {
       inData = trim(inData); // Eliminar espacios en blanco
       String[] values = split(inData, ',');
-      if (values.length == 4) {
+      if (values.length == 5) {
         humidity = float(values[0]);
         temperature = float(values[1]);
-        co2 = float(values[2]);
+       co2 = float(values[2]);
         valorLuz = int(values[3]);
+        infrarojo = float(values[4]);
         println("Humedad: ", humidity, " | Temperatura: ", temperature, " | CO2: ", co2, " | Luz: ", valorLuz);
       }
     }
@@ -88,6 +142,10 @@ void draw() {
   TempGraph();
   humiGraph();
   co2Graph();
+  plotValues.defaultDraw();
+  actualizarGraficainfra(infrarojo);
+  //plotColors.defaultDraw();
+  //actualizarGraficacolor(rojo, verde, azul);
 
   delay(100);
 }
@@ -363,4 +421,67 @@ GPointsArray lightLevelsToGPoints() {
     points.add(i, lightLevels[i]);
   }
   return points;
+}
+
+void actualizarGrafica(float r, float g, float b) {
+  // Desplazar los datos para mantener el historial
+  for (int i = 0; i < 50 - 1; i++) {
+    redValues[i] = redValues[i + 1];
+    greenValues[i] = greenValues[i + 1];
+    blueValues[i] = blueValues[i + 1];
+  }
+  
+  // Añadir los nuevos valores al final del historial
+  redValues[50 - 1] = r;
+  greenValues[50 - 1] = g;
+  blueValues[50 - 1] = b;
+
+  // Crear puntos para la gráfica usando los valores del historial
+  GPointsArray redPoints = new GPointsArray();
+  GPointsArray greenPoints = new GPointsArray();
+  GPointsArray bluePoints = new GPointsArray();
+  
+  for (int i = 0; i < 50; i++) {
+    redPoints.add(i, redValues[i]);
+    greenPoints.add(i, greenValues[i]);
+    bluePoints.add(i, blueValues[i]);
+  }
+  
+  // Actualizar los puntos en la gráfica
+  plotColors.getLayer("Red").setPoints(redPoints);
+  plotColors.getLayer("Green").setPoints(greenPoints);
+  plotColors.getLayer("Blue").setPoints(bluePoints);
+}
+
+void actualizarGraficainfra(float nuevoValor) {
+  // Desplazar los datos para mantener el historial y eliminar el valor más antiguo
+  for (int i = 0; i < maxPoints - 1; i++) {
+    infrarojoValues[i] = infrarojoValues[i + 1];
+  }
+  
+  // Añadir el nuevo valor al final del historial
+  infrarojoValues[maxPoints - 1] = nuevoValor;
+
+  // Crear puntos para la gráfica usando los valores del historial
+  GPointsArray points = new GPointsArray();
+  
+  for (int i = 0; i < maxPoints - 1; i++) {
+    points.add(i, infrarojoValues[i]);
+  }
+  
+  // Actualizar los puntos en la gráfica
+  plotValues.setPoints(points);
+  
+  // Ajustar automáticamente la escala de los ejes Y en la gráfica
+  float minValue = min(infrarojoValues);
+  float maxValue = max(infrarojoValues);
+  plotValues.setYLim(minValue - 10, maxValue + 10);  // Añadir un pequeño margen
+}
+
+
+void keyPressed() {
+  if (key == ESC) {
+    key = 0; // Ignora la tecla ESC para que no cierre el programa
+  }
+  // Puedes agregar otros comportamientos si es necesario
 }
