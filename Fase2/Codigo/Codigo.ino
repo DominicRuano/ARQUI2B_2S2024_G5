@@ -46,24 +46,6 @@ float CO2[3] = {2.3, 0.53, -0.44};
 float Ro = 10;    
 
 
-//colores
-
-#define S0 8
-#define S1 9
-#define S2 12
-#define S3 11
-#define sensorSalida 10
-int frecuenciaRojo = 0;
-int frecuenciaVerde = 0;
-int frecuenciaAzul = 0;
-int Rojo_Frec = 0;
-int Verde_Frec = 0;
-int Azul_Frec = 0;
-int colorRojo;
-int colorVerde;
-int colorAzul;
-
-
 // ultrasónico y leds parqueo
 const int Trigger = 8;   
 const int Echo = 9;      
