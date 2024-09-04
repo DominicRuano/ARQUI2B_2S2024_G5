@@ -135,6 +135,9 @@ void loop() {
 
     ultrasonico(valorDistancia);
 
+    // ===== Talanquera =====  
+    controlarBarrera();  // funcion para controlar la barrera
+
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
@@ -166,9 +169,6 @@ void loop() {
   Serial.println(jsonData);
 
   pantallaLCD();
-
-  // ===== Talanquera =====  
-  controlarBarrera();  // funcion para controlar la barrera
 
   delay(1000);
 }
@@ -483,24 +483,22 @@ void controlarBarrera() {
     int irValue = digitalRead(irSensor);  
 
     // Cierre de la barrera tras verificar que no hay obstaculos
-    if (barreraAbierta && irValue == LOW) {  
+    if (barreraAbierta && irValue == HIGH) {  
         delay(5000);                                   // Espera 5 segundos para permitir el paso completo del auto
         cerrarBarrera(); 
         barreraAbierta = false;                        // Marca la barrera como cerrada
-    } else if (barreraAbierta && irValue == HIGH) {
-                                                       // La barrera permanece abierta si se detecta un obstaculo en el infrarojo (1)
+    } else if (barreraAbierta && irValue == LOW) {
+                                                       // La barrera permanece abierta si se detecta un obstaculo en el infrarojo (0)
     }
 }
 
 // Función para abrir la barrera
 void abrirBarrera() {
     myServo.write(90);                                 // Mueve el servomotor a 90 grados para abrir la barrera
-    Serial.println("Barrera Abierta: Servo a 90 grados");
 }
 
 void cerrarBarrera() {
     myServo.write(0);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
-    Serial.println("Barrera Cerrada: Servo regresando a 0 grados");
 }
 
 // Función para simular la detección de tarjeta RFID (modificar aun) :)
