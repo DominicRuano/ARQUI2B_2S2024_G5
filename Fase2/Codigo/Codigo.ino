@@ -2,6 +2,7 @@
 #include <LiquidCrystal_I2C.h>
 #include "DHT.h"
 #include <EEPROM.h>
+#include <Servo.h>
 
 const int ledCalibracion = 13;                      
 const int PIN_MQ = A0;                                
@@ -62,7 +63,12 @@ unsigned long tiempoInicioRojo = 0;  // Variable para almacenar el tiempo cuando
 bool rojoEncendido = false;          // Indicador de si el LED rojo está encendido
 bool cambiarAAmarillo = false;       // Indicador para cambiar a amarillo después de los 5 segundos
 
-
+// ===== Talanquera ======
+Servo myServo;            
+int irSensor = 6;                      // Pin infrarrojo (modificar existe uno)
+int servoPin = 12;                     // Pin servomotor
+int tarjetaPin = 22;                   // Pin para simular la tarjeta RFID con un interruptor :) borrar luego
+bool barreraAbierta = false;           // Estado inicial de la barrera: cerrada
 
 
 void setup() { 
@@ -99,6 +105,12 @@ void setup() {
   pinMode(LedRojo, OUTPUT);  // Pin como salida para el color rojo
   pinMode(LedVerde, OUTPUT); // Pin como salida para el color verde
   digitalWrite(Trigger, LOW); // Inicializamos el Trigger en bajo
+
+  // ===== Talanquera =====         
+    myServo.attach(servoPin);     //  servomotor en el pin 12
+    myServo.write(0);             // posición inicial de 0grados (cerrado)
+    pinMode(irSensor, INPUT);     // pin del sensor infrarrojo como entrada
+    pinMode(tarjetaPin, INPUT);   // pin para la simular de la tarjeta RFID ,borrar luego :)
 
   delay(1000);
 }
@@ -155,7 +167,8 @@ void loop() {
 
   pantallaLCD();
 
-  
+  // ===== Talanquera =====  
+  controlarBarrera();  // funcion para controlar la barrera
 
   delay(1000);
 }
@@ -456,4 +469,42 @@ void ultrasonico(int d) {
   }
 
   delay(100); // Pausa de 100 ms para evitar lecturas muy frecuentes
+}
+
+
+// ===== Talanquera =====
+void controlarBarrera() {
+    if (tarjetaValidaDetectada() && !barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
+        abrirBarrera();                                 // abre a 90 grados
+        barreraAbierta = true;                          // Marca la barrera como abierta
+    }
+
+    // Lee el estado del sensor infrarrojo
+    int irValue = digitalRead(irSensor);  
+
+    // Cierre de la barrera tras verificar que no hay obstaculos
+    if (barreraAbierta && irValue == LOW) {  
+        delay(5000);                                   // Espera 5 segundos para permitir el paso completo del auto
+        cerrarBarrera(); 
+        barreraAbierta = false;                        // Marca la barrera como cerrada
+    } else if (barreraAbierta && irValue == HIGH) {
+                                                       // La barrera permanece abierta si se detecta un obstaculo en el infrarojo (1)
+    }
+}
+
+// Función para abrir la barrera
+void abrirBarrera() {
+    myServo.write(90);                                 // Mueve el servomotor a 90 grados para abrir la barrera
+    Serial.println("Barrera Abierta: Servo a 90 grados");
+}
+
+void cerrarBarrera() {
+    myServo.write(0);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
+    Serial.println("Barrera Cerrada: Servo regresando a 0 grados");
+}
+
+// Función para simular la detección de tarjeta RFID (modificar aun) :)
+bool tarjetaValidaDetectada() {
+    // Lee el estado del pin del interruptor para simular la tarjeta
+    return digitalRead(tarjetaPin) == HIGH; 
 }
