@@ -41,16 +41,22 @@ int valorInfrarrojo = 0;
 int rojoGlobal = 0;
 int azulGlobal = 0;
 int verdeGlobal = 0;
+int valorDistancia = 0;
 
 float CO2[3] = {2.3, 0.53, -0.44};                                                    
 float Ro = 10;    
 
 
 // ultrasónico y leds parqueo
-const int Trigger = 8;   
-const int Echo = 9;      
-const int LedRojo = 10;   
-const int LedVerde = 11;  
+// const int Trigger = 8;   
+// const int Echo = 9;      
+// const int LedRojo = 10;   
+// const int LedVerde = 11;  
+
+const int Trigger = 45;   
+const int Echo = 47;      
+const int LedRojo = 53;   
+const int LedVerde = 51;  
 
 unsigned long tiempoInicioRojo = 0;  // Variable para almacenar el tiempo cuando se enciende el rojo
 bool rojoEncendido = false;          // Indicador de si el LED rojo está encendido
@@ -87,20 +93,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(buttonPin1), boton1, FALLING);
   attachInterrupt(digitalPinToInterrupt(buttonPin2), boton2, FALLING);
 
-  //colores
-  //Defininiendo las salidas
-  pinMode(S0, OUTPUT);
-  pinMode(S1, OUTPUT);
-  pinMode(S2, OUTPUT);
-  pinMode(S3, OUTPUT);
-
-  //Definiendo salidaSensor como entrada
-  pinMode(sensorSalida, INPUT);
-  
-  // Configura la escala de Frecuencia en 20%
-  digitalWrite(S0,HIGH);
-  digitalWrite(S1,LOW);
-
   //ultrasónico y leds parqueo
   pinMode(Trigger, OUTPUT);  // Pin como salida para el Trigger
   pinMode(Echo, INPUT);      // Pin como entrada para el Echo
@@ -123,14 +115,19 @@ void loop() {
     ppmCO2 = 0;
     valorLuz = 0;
     valorInfrarrojo = 0;
+    valorDistancia = 0;
 
-    leerDHT11();    
+    leerDHT11();   
+
+    valorDistancia = distancia();
+
+    ultrasonico(valorDistancia);
 
     ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
-    //Colores();
 
+    /*  NO DESCOMENTAR
     Serial.print(humedad); // simulando el de humendad
     Serial.print(",");  
     Serial.print(temperatura); //simulando el de temperatura
@@ -140,27 +137,25 @@ void loop() {
     Serial.print(valorLuz); 
     Serial.print(",");
     Serial.println(valorInfrarrojo);
-    
-    /*Serial.print(",");
-    Serial.print(rojoGlobal);
-    Serial.print(",");
-    Serial.print(verdeGlobal);
-    Serial.print(",");
-    Serial.println(azulGlobal);*/
-
-    //para agregar más sensores es necesario agregar más líneas como la anterior
-    /*
-        Serial.print(",");
-        Serial.println(NUEVO SENSOR);
     */
+
+  //formateo de las salidas como json para enviar al esp8266, para que este lo envie al servidor
+  /*
+  String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
+                    ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
+                    ",\"Infrarrojo\":" + String(valorInfrarrojo)+"}";
+  */
+
+  //PRUEBAS CON DATOS QUEMADOS:
+  String jsonData = "{\"Humedad\":" + String(50) + ",\"Temperatura\":" + String(22) +
+                    ",\"PPMCO2\":" + String(578) + ",\"Luz\":" + String(100) +
+                    ",\"Infrarrojo\":" + String(1)+",\"Distancia\":" + String(valorDistancia)+"}";
+
+  Serial.println(jsonData);
 
   pantallaLCD();
 
-
-  //ultrasónico y leds parqueo
-  ultrasonico();
-
-
+  
 
   delay(1000);
 }
@@ -411,8 +406,7 @@ int Infrarrojo(){
 }
 
 
-
-void ultrasonico() {
+int distancia(){
   long t; // Tiempo que demora en llegar el eco
   long d; // Distancia en centímetros
 
@@ -423,6 +417,11 @@ void ultrasonico() {
 
   t = pulseIn(Echo, HIGH); // Obtenemos el ancho del pulso
   d = t / 59;              // Escalamos el tiempo a una distancia en cm
+
+  return d;
+}
+
+void ultrasonico(int d) {
 
   // Comportamiento cuando la distancia es <= 5 cm
   if (d <= 5 && !rojoEncendido && !cambiarAAmarillo) {
