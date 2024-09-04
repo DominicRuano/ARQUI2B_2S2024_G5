@@ -3,6 +3,8 @@
 #include "DHT.h"
 #include <EEPROM.h>
 #include <Servo.h>
+#include <SPI.h>
+#include <MFRC522.h>
 
 const int ledCalibracion = 13;                      
 const int PIN_MQ = A0;                                
@@ -70,6 +72,24 @@ int servoPin = 12;                     // Pin servomotor
 int tarjetaPin = 22;                   // Pin para simular la tarjeta RFID con un interruptor :) borrar luego
 bool barreraAbierta = false;           // Estado inicial de la barrera: cerrada
 
+// ===== modulo rfid =====
+#define SS_PIN 10  // pines temporales estan repetidos pero como vamos a cambiar de arduino se queda si de momento.
+#define RST_PIN 9
+MFRC522 rfid(SS_PIN, RST_PIN);
+
+  // Pin para el LED u otra salida
+int pinSalida = 7;
+
+// Declarar una lista de NUIDs conocidos
+byte NUIDsConocidos[][4] = {
+  {0xA1, 0xB2, 0xC3, 0xD4},
+  {0x01, 0x02, 0x03, 0x04},
+  {0xFF, 0xEE, 0xDD, 0xCC}
+};
+
+// Número de NUIDs que se han almacenado
+int cantidadNUIDs = sizeof(NUIDsConocidos) / sizeof(NUIDsConocidos[0]);
+
 
 void setup() { 
   Serial.begin(9600);
@@ -111,6 +131,13 @@ void setup() {
     myServo.write(0);             // posición inicial de 0grados (cerrado)
     pinMode(irSensor, INPUT);     // pin del sensor infrarrojo como entrada
     pinMode(tarjetaPin, INPUT);   // pin para la simular de la tarjeta RFID ,borrar luego :)
+
+  // ===== Lector rfid =====
+  SPI.begin();
+  rfid.PCD_Init();
+  // pinMode(pinSalida, OUTPUT); // Configuramos el pin como salida TDODAS ESTAS LINEAS ESTAN PENDIENTES DE VER SI SON NECESARIAS.
+  // digitalWrite(pinSalida, LOW); // Inicialmente apagado
+  // Serial.println(F("Esperando tarjeta RFID..."));
 
   delay(1000);
 }
@@ -168,6 +195,7 @@ void loop() {
 
   Serial.println(jsonData);
 
+  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
   pantallaLCD();
 
   delay(1000);
@@ -505,4 +533,55 @@ void cerrarBarrera() {
 bool tarjetaValidaDetectada() {
     // Lee el estado del pin del interruptor para simular la tarjeta
     return digitalRead(tarjetaPin) == HIGH; 
+}
+
+void leerTarjetaRFID() {
+  // Revisar si hay una tarjeta presente
+  if (!rfid.PICC_IsNewCardPresent()) {
+    return; // Si no hay tarjeta, salimos de la función
+  }
+
+  // Revisar si la tarjeta puede ser leída
+  if (!rfid.PICC_ReadCardSerial()) {
+    return; // Si no puede ser leída, salimos de la función
+  }
+
+  /*/ Mostrar el NUID de la tarjeta
+  Serial.print(F("NUID de la tarjeta: "));
+  for (byte i = 0; i < 4; i++) {
+    Serial.print(rfid.uid.uidByte[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+  */
+
+  // Comparar el NUID con la lista de NUIDs conocidos
+  if (tarjetaEsConocida(rfid.uid.uidByte)) {
+    Serial.println("Tarjeta reconocida. Activando salida.");
+    digitalWrite(pinSalida, HIGH); // Activar salida
+    delay(2000); // Mantener salida activada por 2 segundos
+    digitalWrite(pinSalida, LOW);  // Apagar salida
+  } else {
+    Serial.println("Tarjeta no reconocida.");
+  }
+
+  // Detener la lectura de la tarjeta
+  rfid.PICC_HaltA();
+}
+
+// Función para comparar la tarjeta leída con la lista de NUIDs conocidos
+bool tarjetaEsConocida(byte* nuidLeido) {
+  for (int i = 0; i < cantidadNUIDs; i++) {
+    bool coinciden = true;
+    for (int j = 0; j < 4; j++) {
+      if (NUIDsConocidos[i][j] != nuidLeido[j]) {
+        coinciden = false;
+        break; // Salir si no coinciden
+      }
+    }
+    if (coinciden) {
+      return true; // Si los 4 bytes coinciden, la tarjeta es reconocida
+    }
+  }
+  return false; // Si ninguna coincidió, la tarjeta no es reconocida
 }
