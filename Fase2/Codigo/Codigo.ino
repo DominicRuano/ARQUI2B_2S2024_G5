@@ -59,7 +59,7 @@ float Ro = 10;
 const int Trigger = 45;   
 const int Echo = 47;      
 const int LedRojo = 53;   
-const int LedVerde = 51;  
+const int LedVerde = 49;  
 
 unsigned long tiempoInicioRojo = 0;  // Variable para almacenar el tiempo cuando se enciende el rojo
 bool rojoEncendido = false;          // Indicador de si el LED rojo está encendido
@@ -189,9 +189,12 @@ void loop() {
   */
 
   //PRUEBAS CON DATOS QUEMADOS:
-  String jsonData = "{\"Humedad\":" + String(50) + ",\"Temperatura\":" + String(22) +
-                    ",\"PPMCO2\":" + String(578) + ",\"Luz\":" + String(100) +
-                    ",\"Infrarrojo\":" + String(1)+",\"Distancia\":" + String(valorDistancia)+"}";
+  String jsonData = "[{\"device_src\":\"HUMEDAD\", \"val\":\"" + String(50) + "\"}, " +
+                  "{\"device_src\":\"TEMPERATURA\", \"val\":\"" + String(22) + "\"}, " +
+                  "{\"device_src\":\"GAS\", \"val\":\"" + String(550) + "\"},"+
+                  "{\"device_src\":\"LUZ\", \"val\":\"" + String(550) + "\"},"+
+                  "{\"device_src\":\"INFRARROJO\", \"val\":\"" + String(550) + "\"},"+
+                  "{\"device_src\":\"DISTANCIA\", \"val\":\"" + String(valorDistancia) + "\"},"+"]";
 
   Serial.println(jsonData);
 
