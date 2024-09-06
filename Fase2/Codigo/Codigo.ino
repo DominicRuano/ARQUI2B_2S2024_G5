@@ -77,9 +77,6 @@ bool barreraAbierta = false;           // Estado inicial de la barrera: cerrada
 #define RST_PIN 9
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-  // Pin para el LED u otra salida
-int pinSalida = 7;
-
 // Declarar una lista de NUIDs conocidos
 byte NUIDsConocidos[][4] = {
   {0xA1, 0xB2, 0xC3, 0xD4},
@@ -505,7 +502,7 @@ void ultrasonico(int d) {
 
 // ===== Talanquera =====
 void controlarBarrera() {
-    if (tarjetaValidaDetectada() && !barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
+    if (leerTarjetaRFID() && !barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
         abrirBarrera();                                 // abre a 90 grados
         barreraAbierta = true;                          // Marca la barrera como abierta
     }
@@ -532,21 +529,15 @@ void cerrarBarrera() {
     myServo.write(0);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
 }
 
-// Función para simular la detección de tarjeta RFID (modificar aun) :)
-bool tarjetaValidaDetectada() {
-    // Lee el estado del pin del interruptor para simular la tarjeta
-    return digitalRead(tarjetaPin) == HIGH; 
-}
-
-void leerTarjetaRFID() {
+bool leerTarjetaRFID() {
   // Revisar si hay una tarjeta presente
   if (!rfid.PICC_IsNewCardPresent()) {
-    return; // Si no hay tarjeta, salimos de la función
+    return false; // Si no hay tarjeta, retornamos false
   }
 
   // Revisar si la tarjeta puede ser leída
   if (!rfid.PICC_ReadCardSerial()) {
-    return; // Si no puede ser leída, salimos de la función
+    return false; // Si no puede ser leída, retornamos false
   }
 
   /*/ Mostrar el NUID de la tarjeta
@@ -560,17 +551,14 @@ void leerTarjetaRFID() {
 
   // Comparar el NUID con la lista de NUIDs conocidos
   if (tarjetaEsConocida(rfid.uid.uidByte)) {
-    Serial.println("Tarjeta reconocida. Activando salida.");
-    digitalWrite(pinSalida, HIGH); // Activar salida
-    delay(2000); // Mantener salida activada por 2 segundos
-    digitalWrite(pinSalida, LOW);  // Apagar salida
+    rfid.PICC_HaltA(); // Detener la lectura de la tarjeta
+    return true;
   } else {
-    Serial.println("Tarjeta no reconocida.");
+    rfid.PICC_HaltA(); // Detener la lectura de la tarjeta
+    return false;
   }
-
-  // Detener la lectura de la tarjeta
-  rfid.PICC_HaltA();
 }
+
 
 // Función para comparar la tarjeta leída con la lista de NUIDs conocidos
 bool tarjetaEsConocida(byte* nuidLeido) {
