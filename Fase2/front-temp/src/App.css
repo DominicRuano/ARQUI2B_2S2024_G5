@@ -1,0 +1,42 @@
+.App {
+  text-align: center;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Roboto', sans-serif;
+}
+
+.App-header {
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-container {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.356);
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  height: 250px;
+  margin: 0px;
+}
+
+.MuiButtonBase-root {
+  margin: 10px;
+}
+
+/* Usamos CSS Grid para organizar las gráficas */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Distribuye automáticamente las columnas */
+  gap: 80px; /* Espacio entre las gráficas */
+  width: 170%; /* Ocupa todo el ancho del contenedor */
+  justify-items: center; /* Centra las gráficas horizontalmente */
+}
