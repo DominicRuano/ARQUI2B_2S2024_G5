@@ -88,7 +88,7 @@ app.get('/datos',(req,res)=>{
     const { startDate, endDate } = req.query;
 
     // Llamada al stored procedure
-    const query = `CALL obtenerMediciones(?, ?)`;
+    const query = 'CALL obtenerMediciones(?, ?)';
     connection.query(query, [startDate, endDate], (err, results) => {
         if (err) {
             console.error('Error executing procedure:', err);
