@@ -413,21 +413,22 @@ Cuándo usar ARIMA:
 Cuando los datos climáticos (como temperatura, humedad) tienen una relación temporal (dependen de valores pasados).
 Funciona bien cuando los datos no tienen patrones estacionales claros.
 
---------------------------------------------------------------------------------------
-import pandas as pd
-from statsmodels.tsa.arima_model import ARIMA
+```python
+  import pandas as pd
+  from statsmodels.tsa.arima_model import ARIMA
 
-# Cargar datos históricos
-data = pd.read_csv('historical_data.csv', index_col='date', parse_dates=True)
-# Crear modelo ARIMA (p=5, d=1, q=0 es un ejemplo de orden)
-model = ARIMA(data['temperature'], order=(5, 1, 0))
-model_fit = model.fit(disp=0)
+  # Cargar datos históricos
+  data = pd.read_csv('historical_data.csv', index_col='date', parse_dates=True)
+  # Crear modelo ARIMA (p=5, d=1, q=0 es un ejemplo de orden)
+  model = ARIMA(data['temperature'], order=(5, 1, 0))
+  model_fit = model.fit(disp=0)
 
-# Predicciones
-forecast = model_fit.forecast(steps=10)  # Predice 10 puntos futuros
-print(forecast)
+  # Predicciones
+  forecast = model_fit.forecast(steps=10)  # Predice 10 puntos futuros
+  print(forecast)
 
-------------------------------------------------------------------------------------
+```
+
 
 Ventajas:
 
@@ -446,7 +447,7 @@ Cuándo usar Prophet:
 Si tus datos presentan estacionalidad (como los patrones diarios de temperatura o humedad).
 Ideal si quieres obtener predicciones fácilmente ajustadas para diferentes períodos de tiempo.
 
-----------------------------------------------------------------
+```python
 
 from fbprophet import Prophet
 import pandas as pd
@@ -467,7 +468,7 @@ forecast = model.predict(future)
 print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']])
 
 
-----------------------------------------------------------------
+```
 
 Ventajas:
 
@@ -485,7 +486,7 @@ Cuándo usar Scikit-learn:
 Cuando deseas hacer predicciones con múltiples entradas (como temperatura, humedad, presión).
 Adecuado para modelos más complejos con datos multivariados.
 
-------------------------------------------------------------------
+```python
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -507,7 +508,7 @@ model.fit(X_train, y_train)
 predictions = model.predict(X_test)
 print(predictions)
 
-------------------------------------------------------------------
+```
 
 Ventajas:
 
