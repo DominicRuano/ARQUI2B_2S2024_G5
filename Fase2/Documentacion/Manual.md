@@ -518,6 +518,10 @@ Desventajas:
 
 Requiere mayor trabajo de ajuste y validación.
 
-### Entidad Relación de la Base de Datos
+### Modelo ER
 
 ![ER](./img/ER.png)
+
+### Instancia de la base de datos en RDS de AWS
+
+![ER](./img/DB-RDS.png)
