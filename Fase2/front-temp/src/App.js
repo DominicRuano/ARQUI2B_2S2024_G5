@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { TextField, Button, Grid, Box, Typography } from '@mui/material';
+import axios from 'axios';
 import './App.css';
 
-// Para renderizar los gráficos de cada sensor
 const ChartComponent = ({ data, title }) => {
   return (
     <div className="chart-container">
@@ -37,20 +37,6 @@ function App() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [sensorData, setSensorData] = useState([[], [], [], [], []]);
-                            // Tempearatura, Humedad, Luminosidad, CO2, Infrarrojo
-
-  const fetchSensorData = async () => {
-    /* 
-    /// Aqui se obtendría la data de el API usando startTime y endTime como parámetros (Codigo comentado solo para tener un ejemplo)
-    const response = await fetch(
-      `http://your-api-url.com/sensors?start=${startTime}&end=${endTime}`
-    );
-    const data = await response.json();
-    
-    /// sumiendo que data es un array con 5 arrays de sensores
-    setSensorData(data);
-    */
-  };
 
   const sensorNames = [
     'Temperatura',
@@ -60,38 +46,23 @@ function App() {
     'Infrarrojo',
   ];
 
-  // Función para generar datos ficticios
-  const generateFakeData = () => {
-    const fakeData = [];
-    const now = new Date();
-    
-    // Generar datos para un rango de 100 puntos de tiempo
-    for (let i = 0; i < 100; i++) {
-      fakeData.push({
-        time: new Date(now.getTime() - i * 60000).toLocaleTimeString(), // cada minuto
-        value: Math.floor(Math.random() * 10000), // valor aleatorio entre 0 y 10000
-      });
-    }
-    return fakeData.reverse(); // invertir para que los datos estén en orden ascendente de tiempo
-  };
-
-  // Función para generar datos ficticios para todos los sensores
-  const generateFakeSensorData = () => {
-    const fakeSensorData = [];
-    for (let i = 0; i < 5; i++) {
-      fakeSensorData.push(generateFakeData());
-    }
-    setSensorData(fakeSensorData);
-  };
-
-
   const handleFetchData = () => {
     if (startTime && endTime) {
-      console.log('Start Time:', startTime);
-      console.log('End Time:', endTime);
-      // Aquí iría la lógica de fetch, por ejemplo:
-      generateFakeSensorData();
-      // fetchSensorData();
+      axios
+        .get('http://localhost:3002/datos', {
+          params: {
+            startDate: startTime,
+            endDate: endTime,
+          },
+        })
+        .then((response) => {
+          // Suponiendo que los resultados tienen datos de 5 sensores
+          console.log(response.data);
+          //setSensorData(response.data);
+        })
+        .catch((error) => {
+          console.error('Error fetching data:', error);
+        });
     } else {
       console.log('Please select both start and end times.');
     }

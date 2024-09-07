@@ -72,3 +72,9 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 ### Dependencias Dominic
 npm install chart.js react-chartjs-2 @mui/material @mui/icons-material @emotion/react @emotion/styled
+npm install express body-parser mysql2
+npm install express mysql2 body-parser cors
+npm audit fix --force
+export NODE_OPTIONS=--openssl-legacy-provider
+npm install axios
+npm install cors
