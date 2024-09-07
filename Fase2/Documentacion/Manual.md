@@ -518,3 +518,6 @@ Desventajas:
 
 Requiere mayor trabajo de ajuste y validación.
 
+### Entidad Relación de la Base de Datos
+
+![ER](./img/ER.png)
