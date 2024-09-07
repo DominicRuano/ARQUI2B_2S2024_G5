@@ -30,14 +30,6 @@ float temperatura = 0;
 // Asegúrate de usar la dirección correcta encontrada por el escáner I2C
 LiquidCrystal_I2C lcd(0x27, 16, 2); 
 
-const int buttonPin1 = 3; // Pin al que está conectado el primer botón
-const int buttonPin2 = 2; // Pin al que está conectado el segundo botón
-const int buttonPin3 = 4; // Pin al que está conectado el segundo botón
-
-int Opcion = 0;
-int Opcion2 = 0;
-int OpcionANT = 0;
-
 long ppmCO2 = 0;
 int valorLuz = 0;
 int valorInfrarrojo = 0;
@@ -106,15 +98,9 @@ void setup() {
 
   Serial.println(Ro);
 
-  pinMode(buttonPin1, INPUT_PULLUP);
-  pinMode(buttonPin2, INPUT_PULLUP);
-  pinMode(buttonPin3, INPUT_PULLUP);
 
   //infrarrojo
   pinMode(pinInfrarrojo, INPUT);
-
-  attachInterrupt(digitalPinToInterrupt(buttonPin1), boton1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(buttonPin2), boton2, FALLING);
 
   //ultrasónico y leds parqueo
   pinMode(Trigger, OUTPUT);  // Pin como salida para el Trigger
@@ -137,14 +123,6 @@ void setup() {
   // Serial.println(F("Esperando tarjeta RFID..."));
 
   delay(1000);
-}
-
-void boton1(){
-  Opcion = 1;
-}
-
-void boton2(){
-  Opcion = 2;
 }
 
 void loop() { 
@@ -196,7 +174,7 @@ void loop() {
   Serial.println(jsonData);
 
   leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
-  pantallaLCD();
+  lcdInicio();
 
   delay(1000);
 }
@@ -263,37 +241,6 @@ void leerDHT11() {
 }
 
 // LCD
-void pantallaLCD (){
-    // Leer el estado de los botones
-  int buttonState1 = digitalRead(buttonPin1);
-  int buttonState2 = digitalRead(buttonPin2);
-  int buttonState3 = digitalRead(buttonPin3);
-
-  // Verificar si el primer botón está presionado
-  if (buttonState3 == HIGH) {
-    Opcion = 3;
-  }
-
-  switch (Opcion) {
-    case 1:
-      lcdB1();
-      break;
-    case 2:
-      lcdB2();
-      break;
-    case 3:
-      lcdB3();
-      break;
-    default:
-      if (OpcionANT == 0){
-        lcdInicio();  // Mensaje de bienvenida en pantalla lcd y espera 2s
-      }
-      OpcionANT = 1;
-      break;
-  }
-}
-
-
 void lcdInicio(){
   lcd.clear();
   lcd.setCursor(0,0);
@@ -302,142 +249,21 @@ void lcdInicio(){
   lcd.print("Fase 1 - Grupo 5");  
 }
 
-void lcdB1(){
+void lcdExito(){
   lcd.clear();
   lcd.setCursor(0,0);
-
-  if (Opcion2 == 0){
-    lcd.print("Humed | Temp");
-    lcd.setCursor(0,1);
-    lcd.print(String(humedad) + " | " + String(temperatura));  
-    Opcion2 = 1;
-  }else if(Opcion2 == 1){
-    lcd.print("Luz   | Gas");
-    lcd.setCursor(0,1);
-    String mensaje = String(valorLuz);
-
-    // Agregar espacios hasta que la longitud sea 3
-    while (mensaje.length() < 6) {
-    mensaje += " ";
-    }
-    lcd.print( mensaje + "| " + String(ppmCO2));  
-    Opcion2 =2;
-  }else if(Opcion2 == 2){
-    lcd.print("Infrarrojo");
-    lcd.setCursor(0,1);
-    if (valorInfrarrojo == 0){
-      lcd.print("Obstaculo");
-    }else{
-      lcd.print("Libre");
-    }
-    Opcion2 = 0;
-  }
-}
-
-void lcdB2(){
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("     Valores");
+  lcd.print("Lectura exitosa");
   lcd.setCursor(0,1);
-  lcd.print("    Guardados ");
-
-  byte* bytePointer;
-
-  bytePointer = (byte*)(void*)&humedad; // Castea el float a un array de bytes
-  for (int i = 0; i < sizeof(humedad); i++) {
-    EEPROM.write(0 + i, bytePointer[i]);
-  }
-
-  bytePointer = (byte*)(void*)&temperatura; // Castea el float a un array de bytes
-  for (int i = 0; i < sizeof(temperatura); i++) {
-    EEPROM.write(100 + i, bytePointer[i]);
-  }
-
-  bytePointer = (byte*)(void*)&valorLuz; // Castea el int a un array de bytes
-  for (int i = 0; i < sizeof(valorLuz); i++) {
-    EEPROM.write(200 + i, bytePointer[i]);
-  }
-
-  bytePointer = (byte*)(void*)&ppmCO2; // Castea el long a un array de bytes
-  for (int i = 0; i < sizeof(ppmCO2); i++) {
-    EEPROM.write(300 + i, bytePointer[i]);
-  }
-  //infrarrojo en la eeprom
-  bytePointer = (byte*)(void*)&valorInfrarrojo;
-  for (int i=0; i<sizeof(valorInfrarrojo);i++){
-    EEPROM.write(400+i, bytePointer[i]);
-  }
-
-
-  Opcion = 1;
+  lcd.print("");  
 }
 
-void lcdB3(){
-  float humedad2 ;
-  float temperatura2;
-  long ppmCO22;
-  int valorLuz2;
-  int valorInfrarrojo2;
-
-  byte* bytePointer0 = (byte*)(void*)&humedad2;
-  for (int i = 0; i < sizeof(humedad2); i++) {
-    bytePointer0[i] = EEPROM.read(0 + i);
-  }
-
-  byte* bytePointer1 = (byte*)(void*)&temperatura2;
-  for (int i = 0; i < sizeof(temperatura2); i++) {
-    bytePointer1[i] = EEPROM.read(100 + i);
-  }
-
-  byte* bytePointer2 = (byte*)(void*)&valorLuz2;
-  for (int i = 0; i < sizeof(valorLuz2); i++) {
-    bytePointer2[i] = EEPROM.read(200 + i);
-  }
-
-  byte* bytePointer3 = (byte*)(void*)&ppmCO22;
-  for (int i = 0; i < sizeof(ppmCO22); i++) {
-    bytePointer3[i] = EEPROM.read(300 + i);
-  }
-
-  byte* bytePointer4 = (byte*)(void*)&valorInfrarrojo2;
-  for (int i=0; i<sizeof(valorInfrarrojo2);i++){
-    bytePointer4[i] = EEPROM.read(400+i);
-  }
-
-
-
+void lcdFallida(){
   lcd.clear();
   lcd.setCursor(0,0);
-
-  if (Opcion2 == 0){
-    lcd.print("Humed | Temp   G");
-    lcd.setCursor(0,1);
-    lcd.print(String(humedad2) + " | " + String(temperatura2));  
-    Opcion2 = 1;
-  }else if(Opcion2 == 1){
-    lcd.print("Luz   | Gas    G");
-    lcd.setCursor(0,1);
-    String mensaje = String(valorLuz2);
-
-    // Agregar espacios hasta que la longitud sea 3
-    while (mensaje.length() < 6) {
-    mensaje += " ";
-    }
-    lcd.print( mensaje + "| " + String(ppmCO22));  
-    Opcion2 = 2;
-  }else if(Opcion2 == 2){
-    lcd.print("Infrarrojo   G");
-    lcd.setCursor(0,1);
-    if (valorInfrarrojo2 == 0){
-      lcd.print("Obstaculo");
-    }else{
-      lcd.print("Libre");
-    }
-    Opcion2 = 0;
-  }
+  lcd.print("Lectura fallida");
+  lcd.setCursor(0,1);
+  lcd.print("");  
 }
-
-
 
 int Infrarrojo(){
 
@@ -552,9 +378,11 @@ bool leerTarjetaRFID() {
   // Comparar el NUID con la lista de NUIDs conocidos
   if (tarjetaEsConocida(rfid.uid.uidByte)) {
     rfid.PICC_HaltA(); // Detener la lectura de la tarjeta
+    lcdExito();
     return true;
   } else {
     rfid.PICC_HaltA(); // Detener la lectura de la tarjeta
+    lcdFallida();
     return false;
   }
 }
