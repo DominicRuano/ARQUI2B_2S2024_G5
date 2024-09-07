@@ -46,6 +46,46 @@ function App() {
     'Infrarrojo',
   ];
 
+    // Función para parsear los datos
+    const parseSensorData = (data) => {
+      // Crear un arreglo vacío para cada sensor
+      const humedadData = [];
+      const tempData = [];
+      const gasData = [];
+      const luzData = [];
+      const infraData = [];
+  
+      // Recorrer los datos originales y distribuirlos según el tipo de sensor
+      data.forEach((item) => {
+        const { nombre, valor, fecha } = item;
+  
+        const parsedData = { time: new Date(fecha).toLocaleTimeString(), value: valor };
+  
+        switch (nombre) {
+          case 'HUMEDAD':
+            humedadData.push(parsedData);
+            break;
+          case 'TEMP':
+            tempData.push(parsedData);
+            break;
+          case 'GAS':
+            gasData.push(parsedData);
+            break;
+          case 'LUZ':
+            luzData.push(parsedData);
+            break;          
+          case 'INFRA':
+            infraData.push(parsedData);
+            break;
+          default:
+            console.log('Sensor no reconocido:', nombre);
+            break;
+        }
+      });
+  
+      setSensorData([humedadData, tempData, gasData, [], []]); // Asumimos que hay 5 sensores en total
+    };
+
   const handleFetchData = () => {
     if (startTime && endTime) {
       axios
@@ -56,9 +96,10 @@ function App() {
           },
         })
         .then((response) => {
-          // Suponiendo que los resultados tienen datos de 5 sensores
-          console.log(response.data);
-          //setSensorData(response.data);
+          //console.log(startTime);
+          //console.log(endTime);
+          //console.log(response.data);
+          parseSensorData(response.data);
         })
         .catch((error) => {
           console.error('Error fetching data:', error);
