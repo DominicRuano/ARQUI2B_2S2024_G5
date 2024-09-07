@@ -52,13 +52,26 @@ connection.connect((err)=>{
 });*/
 
 //Post al sp 
-app.post('/agregar',(req,res)=>{
-    const data = req.body;
+app.post('/agregar', (req, res) => {
+    const data = req.body;  // Se espera que esto sea un arreglo de objetos [{device_src: "HUMEDAD", val: "100"}, ...]
+
+    if (!Array.isArray(data)) {
+        // Si no se recibe un array, responder con un error
+        return res.status(400).send('El cuerpo de la solicitud debe ser un arreglo de objetos.');
+    }
+
     let completedQueries = 0;  // Contador para saber cuándo se han completado todas las consultas
     let errors = [];  // Para almacenar posibles errores
 
     data.forEach(item => {
         const { device_src, val } = item;
+
+        // Verifica que los campos device_src y val existan
+        if (!device_src || !val) {
+            errors.push('Faltan campos obligatorios');
+            completedQueries++;
+            return;
+        }
 
         // Llamada al stored procedure
         const query = 'CALL insertarMedicion(?, ?, NULL, NULL)';
@@ -66,24 +79,24 @@ app.post('/agregar',(req,res)=>{
             completedQueries++;
 
             if (err) {
-                console.error('Error executing procedure:', err);
+                console.error('Error ejecutando el procedimiento:', err);
                 errors.push(err);
             }
 
             // Solo enviamos la respuesta cuando todas las consultas han finalizado
             if (completedQueries === data.length) {
                 if (errors.length > 0) {
-                    // Si hay errores, se responde con un código de error y los errores
-                    res.status(500).send({ message: 'Error executing some queries', errors });
+                    console.error('Error ejecutando algunas consultas:', errors);
+                    res.status(500).send({ message: 'Error ejecutando algunas consultas', errors });
                 } else {
-                    // Si no hay errores, se responde con éxito
-                    res.status(200).send('Data inserted successfully');
+                    console.log('Datos insertados correctamente');
+                    res.status(200).send('Datos insertados correctamente');
                 }
             }
         });
     });
-
 });
+
 
 //lectura
 app.get('/datos',(req,res)=>{
@@ -97,14 +110,14 @@ app.get('/datos',(req,res)=>{
             res.status(500).send('Error executing procedure');
             return;
         }
-
+        console.log('Data retrieved successfully');
         res.status(200).json(results[0]); // Los resultados se devuelven en el primer elemento del array
     });
 });
 
 //Iniciando el servidor
 app.listen(3002,()=>{
-    console.log('Servidor escuchando en el puerto 3000');
+    console.log('Servidor escuchando en el puerto 3002');
 });
 
 //Cerrando conexión

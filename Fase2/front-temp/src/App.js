@@ -98,7 +98,7 @@ function App() {
         .then((response) => {
           //console.log(startTime);
           //console.log(endTime);
-          //console.log(response.data);
+          console.log(response.data);
           parseSensorData(response.data);
         })
         .catch((error) => {

@@ -164,12 +164,12 @@ void loop() {
   */
 
   //PRUEBAS CON DATOS QUEMADOS:
-  String jsonData = "[{\"device_src\":\"HUMEDAD\", \"val\":\"" + String(50) + "\"}, " +
-                  "{\"device_src\":\"TEMPERATURA\", \"val\":\"" + String(22) + "\"}, " +
-                  "{\"device_src\":\"GAS\", \"val\":\"" + String(550) + "\"},"+
-                  "{\"device_src\":\"LUZ\", \"val\":\"" + String(550) + "\"},"+
-                  "{\"device_src\":\"INFRARROJO\", \"val\":\"" + String(550) + "\"},"+
-                  "{\"device_src\":\"DISTANCIA\", \"val\":\"" + String(valorDistancia) + "\"},"+"]";
+  String jsonData = "[{\"device_src\":\"HUMEDAD\", \"val\":\"" + String(100) + "\"}," +
+                    "{\"device_src\":\"TEMP\", \"val\":\"" + String(110) + "\"}," +
+                    "{\"device_src\":\"GAS\", \"val\":\"" + String(120) + "\"}," +
+                    "{\"device_src\":\"LUZ\", \"val\":\"" + String(130) + "\"}," +
+                    "{\"device_src\":\"INFRA\", \"val\":\"" + String(140) + "\"}]";
+
 
   Serial.println(jsonData);
 
@@ -234,7 +234,7 @@ void leerDHT11() {
 
   // Verificar si hay errores al leer el sensor
   if (isnan(humedad) || isnan(temperatura)) {
-    Serial.println("Error al leer el sensor DHT11");
+    //Serial.println("Error al leer el sensor DHT11");
     humedad = humedad2;
     temperatura = temperatura2;
   }
