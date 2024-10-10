@@ -96,7 +96,7 @@ void setup() {
 
   // inicializacion led iluminacion (general)
   pinMode(pinLED, OUTPUT);
-  digitalWrite(pinLED, HIGH);
+  //digitalWrite(pinLED, HIGH);
 
   //ultrasónico y leds parqueo
   pinMode(Trigger, OUTPUT);  // Pin como salida para el Trigger
@@ -151,38 +151,17 @@ void loop() {
     // ===== Controlar el LED de iluminación =====
     controlarLED(valorLuz, umbralLuz);
 
-    /*  NO DESCOMENTAR
-    Serial.print(humedad); // simulando el de humendad
-    Serial.print(",");  
-    Serial.print(temperatura); //simulando el de temperatura
-    Serial.print(",");
-    Serial.print(ppmCO2);  //salida del sensor de CO2
-    Serial.print(",");
-    Serial.print(valorLuz); 
-    Serial.print(",");
-    Serial.println(valorInfrarrojo);
-    */
 
   //formateo de las salidas como json para enviar al esp8266, para que este lo envie al servidor
   String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
                     ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
                     ",\"Infrarrojo\":" + String(valorInfrarrojo)+"}";
 
-  /*PRUEBAS CON DATOS QUEMADOS:
-  String jsonData = "[{\"device_src\":\"HUMEDAD\", \"val\":\"" + String(100) + "\"}," +
-                    "{\"device_src\":\"TEMP\", \"val\":\"" + String(110) + "\"}," +
-                    "{\"device_src\":\"GAS\", \"val\":\"" + String(120) + "\"}," +
-                    "{\"device_src\":\"LUZ\", \"val\":\"" + String(130) + "\"}," +
-                    "{\"device_src\":\"INFRA\", \"val\":\"" + String(140) + "\"}]";
-  */
-
-
   Serial.println(jsonData);
   Serial.print("valor distancia:");
   Serial.println(valorDistancia);
 
   //lcdInicio();
-
 
   delay(1000);
 }
@@ -242,7 +221,7 @@ void controlarLED(int valorLuz, int umbral) {
     digitalWrite(pinLED, LOW);                          // Si hay suficiente luz, apagar el LED
     //Serial.println("LED Apagado (iluminación)");
   }
-  delay(1000);
+  //delay(1000);
 }
 
 //dht
