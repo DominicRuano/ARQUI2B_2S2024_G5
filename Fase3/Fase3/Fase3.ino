@@ -83,7 +83,7 @@ void setup() {
   dht.begin();
   pinMode(ledCalibracion, OUTPUT);
   digitalWrite(ledCalibracion, HIGH);                     
-  //Serial.println("Calibrando...");
+  Serial.println("Calibrando...");
 
   Ro = CalibrarSensor(PIN_MQ);                         
   digitalWrite(ledCalibracion, LOW);              
@@ -114,29 +114,24 @@ void setup() {
   rfid.PCD_Init();
   Serial.println(F("Esperando tarjeta RFID..."));
 
-  // INTERRUPCIONES
-  pinMode(21, INPUT);  // Pin de interrupción 1
-  pinMode(20, INPUT);  // Pin de interrupción 2
-
-  // Asociar las interrupciones
-  attachInterrupt(digitalPinToInterrupt(20), ISR_pin1, RISING);  // Detectar flanco de subida
-  //attachInterrupt(digitalPinToInterrupt(20), ISR_pin2, RISING);  // Detectar flanco de subida
-
   lcdInicio();
   delay(1000);
 }
 
-void loop() { 
+void loop() {
     ppmCO2 = 0;
     valorLuz = 0;
     valorInfrarrojo = 0;
     valorDistancia = 0;
 
-    leerDHT11();   
+    leerDHT11();  
+
+    leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente 
 
     valorDistancia = distancia();
 
     ultrasonico(valorDistancia);
+    leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
     
 
     // ===== Talanquera =====  
@@ -162,8 +157,11 @@ void loop() {
   Serial.println(valorDistancia);
 
   //lcdInicio();
-
-  delay(1000);
+  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
+  delay(500);
+  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
+  delay(500);
+  lcdInicio();
 }
 
 float CalcularResistenciaSensor(int valor_adc) {
@@ -233,7 +231,7 @@ void leerDHT11() {
 
   // Verificar si hay errores al leer el sensor
   if (isnan(humedad) || isnan(temperatura)) {
-    //Serial.println("Error al leer el sensor DHT11");
+    Serial.println("Error al leer el sensor DHT11");
     humedad = humedad2;
     temperatura = temperatura2;
   }
@@ -351,18 +349,6 @@ void abrirBarrera() {
 
 void cerrarBarrera() {
     myServo.write(0);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
-}
-
-// INTERRUPCIONES
-// Función que se llama cuando ocurre una interrupción en el pin de interrupción 1
-void ISR_pin1() {
-  //Serial.println("here");
-  controlarBarrera();
-}
-
-// Función que se llama cuando ocurre una interrupción en el pin de interrupción 2
-void ISR_pin2() {
-  //interruptFlag2 = true;
 }
 
 // Función para leer tarjetas RFID
