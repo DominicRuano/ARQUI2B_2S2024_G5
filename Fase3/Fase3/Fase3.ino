@@ -83,7 +83,7 @@ void setup() {
   dht.begin();
   pinMode(ledCalibracion, OUTPUT);
   digitalWrite(ledCalibracion, HIGH);                     
-  Serial.println("Calibrando...");
+  //Serial.println("Calibrando...");
 
   Ro = CalibrarSensor(PIN_MQ);                         
   digitalWrite(ledCalibracion, LOW);              
@@ -130,14 +130,14 @@ void loop() {
 
     valorDistancia = distancia();
 
-    ultrasonico(valorDistancia);
+    //ultrasonico(valorDistancia);
     leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
     
 
     // ===== Talanquera =====  
     controlarBarrera();  // funcion para controlar la barrera
 
-    ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
+    //ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
 
@@ -151,12 +151,17 @@ void loop() {
   String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
                     ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
                     ",\"Infrarrojo\":" + String(valorInfrarrojo)+"}";
+  
+  //PRUEBAS CON DATOS QUEMADOS:
+  /*String jsonData = "{\"Humedad\":" + String(100) + ",\"Temperatura\":" + String(110) +
+                    ",\"PPMCO2\":" + String(120) + ",\"Luz\":" + String(130) +
+                    ",\"Infrarrojo\":" + String(140)+"}";*/
 
   Serial.println(jsonData);
-  Serial.print("valor distancia:");
-  Serial.println(valorDistancia);
+  // Serial.print("valor distancia:");
+  // Serial.println(valorDistancia);
 
-  //lcdInicio();
+  lcdInicio();
   leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
   delay(500);
   leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
@@ -231,7 +236,7 @@ void leerDHT11() {
 
   // Verificar si hay errores al leer el sensor
   if (isnan(humedad) || isnan(temperatura)) {
-    Serial.println("Error al leer el sensor DHT11");
+    //Serial.println("Error al leer el sensor DHT11");
     humedad = humedad2;
     temperatura = temperatura2;
   }
