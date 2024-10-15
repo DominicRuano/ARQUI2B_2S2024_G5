@@ -150,10 +150,10 @@ void loop() {
 
 
   //formateo de las salidas como json para enviar al esp8266, para que este lo envie al servidor
-  String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
-                    ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
-                    ",\"Infrarrojo\":" + String(valorInfrarrojo)+"}" +
-                    ",\"AccesosCorrectos\":" + String(contadorAccesosCorrectos) + "}";
+    String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
+                      ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
+                      ",\"Infrarrojo\":" + String(valorInfrarrojo) + ",\"Distancia\":" + String(valorDistancia) +
+                      ",\"AccesosCorrectos\":" + String(contadorAccesosCorrectos) + "}";
   
   //PRUEBAS CON DATOS QUEMADOS:
   /*String jsonData = "{\"Humedad\":" + String(100) + ",\"Temperatura\":" + String(110) +
