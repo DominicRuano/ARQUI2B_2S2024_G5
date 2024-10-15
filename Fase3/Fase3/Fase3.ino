@@ -14,6 +14,8 @@ int ldrPin = A1;                                // Pin LDR   (Sensor de luz)
 const int pinLED = 8;                           // Pin para el LED de iluminación general             
 const int pinInfrarrojo = 7;                    // Infrarrojo para la barrera
 
+int contadorAccesosCorrectos = 0;               // +++++ Contador de accesos correctos +++++
+
 int TIEMPOS_MUESTRA_CALIBRACION = 10;                  
 int INTERVALO_MUESTRA_CALIBRACION = 100;               
 int INTERVALO_MUESTRA_LECTURA = 50;                    
@@ -150,7 +152,8 @@ void loop() {
   //formateo de las salidas como json para enviar al esp8266, para que este lo envie al servidor
   String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
                     ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
-                    ",\"Infrarrojo\":" + String(valorInfrarrojo)+"}";
+                    ",\"Infrarrojo\":" + String(valorInfrarrojo)+"}" +
+                    ",\"AccesosCorrectos\":" + String(contadorAccesosCorrectos) + "}";
   
   //PRUEBAS CON DATOS QUEMADOS:
   /*String jsonData = "{\"Humedad\":" + String(100) + ",\"Temperatura\":" + String(110) +
@@ -380,6 +383,9 @@ void leerTarjetaRFID() {
     lcdExito();
     abrirBarrera();
     Serial.println("Tarjeta reconocida");
+
+  // C:
+    contadorAccesosCorrectos++;
   } else {
     lcdFallida();
     Serial.println("Tarjeta no reconocida");
