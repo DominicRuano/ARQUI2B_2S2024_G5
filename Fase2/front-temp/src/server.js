@@ -66,16 +66,11 @@ app.post('/agregar', (req, res) => {
     data.forEach(item => {
         const { device_src, val } = item;
 
-        // Verifica que los campos device_src y val existan
-        if (!device_src || !val) {
-            errors.push('Faltan campos obligatorios');
-            completedQueries++;
-            return;
-        }
-
         // Llamada al stored procedure
-        const query = 'CALL insertarMedicion(?, ?, NULL, NULL)';
-        connection.query(query, [device_src, val], (err, result) => {
+        const query = 'CALL insertarMedicion(?, ?, ?, NULL)';
+        // - Fecha y Hora --> DATTIME (Se puede enviar NULL y se toma la fecha y hora de la base de datos)
+        let date = new Date().toISOString().slice(0, 19).replace('T', ' ');  // Formato: 'YYYY-MM-DD HH:MM:SS'
+        connection.query(query, [device_src, val, date], (err, result) => {
             completedQueries++;
 
             if (err) {
@@ -114,6 +109,31 @@ app.get('/datos',(req,res)=>{
         res.status(200).json(results[0]); // Los resultados se devuelven en el primer elemento del array
     });
 });
+
+app.post('/crear_usuario', (req, res) => {
+    const { nombre, pin } = req.body;  // Se espera recibir los parámetros desde el body
+
+    // Validamos que se hayan enviado ambos parámetros
+    if (!nombre || !pin) {
+        return res.status(400).send('Faltan parámetros: nombre y pin son obligatorios.');
+    }
+
+    // Llamada al stored procedure sp_crear_usuario
+    const query = 'CALL sp_crear_usuario(?, ?)';
+    connection.query(query, [nombre, pin], (err, results) => {
+        if (err) {
+            console.error('Error ejecutando el procedimiento:', err);
+            return res.status(500).send('Error al crear el usuario.');
+        }
+
+        // Asumiendo que el resultado del SP incluye el código de usuario creado
+        const codigoUsuario = results; // Esto depende de cómo devuelve el SP la información
+        console.log('Usuario creado correctamente, código:', codigoUsuario);
+        res.status(200).send({ message: 'Usuario creado correctamente', codigoUsuario });
+    });
+});
+
+
 
 //Iniciando el servidor
 app.listen(3002,()=>{
