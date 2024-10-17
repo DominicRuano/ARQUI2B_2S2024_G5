@@ -8,7 +8,7 @@ import Chart from 'chart.js/auto';
 Chart.register(CategoryScale);
 
 const GasChart = () => {
-    const [data, setData] = useState({ labels: [], datasets: [{ label: 'Gas', data: [] }] });
+    const [data, setData] = useState({ labels: [], datasets: [{ label: 'Co2', data: [] }] });
     
     useEffect(() => {
         const client = mqtt.connect('ws://localhost:8083/mqtt', { keepalive: 60 });

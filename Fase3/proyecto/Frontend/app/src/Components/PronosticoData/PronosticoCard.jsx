@@ -5,7 +5,7 @@ const PronosticoCard = ({ sensor, valor }) => {
     const getIcon = (sensor) => {
         switch(sensor) {
             case 'dht':
-                return valor.temperatura > 30 ? '🌞' : '🌥️';    // Sol si temperatura > 30°C
+                return valor.temperatura > 25 ? '🌞' : '🌥️';    // Sol si temperatura > 30°C
             case 'mq':
                 return valor.gas > 100 ? '🔥' : '💨';           // Fuego si gas/Co2 > 100 ppm
             case 'ldr':
