@@ -109,14 +109,14 @@ void setup() {
 
   // ===== Talanquera =====           Inicialización del servo      
   myServo.attach(servoPin);     //  servomotor en el pin 12
-  myServo.write(0);             // posición inicial de 0grados (cerrado)
+  myServo.write(180);             // posición inicial de 0grados (cerrado)
 
   // ===== Lector rfid =====
   SPI.begin();
   rfid.PCD_Init();
-  Serial.println(F("Esperando tarjeta RFID..."));
+  //Serial.println(F("Esperando tarjeta RFID..."));
 
-  lcdInicio();
+  //lcdInicio();
   delay(1000);
 }
 
@@ -130,10 +130,11 @@ void loop() {
 
     leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente 
 
+    
     valorDistancia = distancia();
 
     //ultrasonico(valorDistancia);
-    leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
+    //leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
     
 
     // ===== Talanquera =====  
@@ -143,7 +144,7 @@ void loop() {
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
 
-    leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
+    //leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
 
     // ===== Controlar el LED de iluminación =====
     controlarLED(valorLuz, umbralLuz);
@@ -164,10 +165,9 @@ void loop() {
   // Serial.print("valor distancia:");
   // Serial.println(valorDistancia);
 
-  lcdInicio();
-  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
-  delay(500);
-  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
+  //leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
+  //delay(500);
+  //leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
   delay(500);
   lcdInicio();
 }
@@ -331,9 +331,9 @@ void ultrasonico(int d) {
 
 // ===== Talanquera =====
 void controlarBarrera() {
-    if (!barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
+    if (barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
         abrirBarrera();                                 // abre a 90 grados
-        barreraAbierta = true;                          // Marca la barrera como abierta
+        barreraAbierta = true;
     }
 
     // Lee el estado del sensor infrarrojo
@@ -341,8 +341,9 @@ void controlarBarrera() {
 
     // Cierre de la barrera tras verificar que no hay obstaculos
     if (barreraAbierta && irValue == HIGH) {  
-        delay(5000);                                   // Espera 5 segundos para permitir el paso completo del auto
+        delay(1000);                                   // Espera 5 segundos para permitir el paso completo del auto
         cerrarBarrera(); 
+        delay(1000);
         barreraAbierta = false;                        // Marca la barrera como cerrada
     } else if (barreraAbierta && irValue == LOW) {
       //Serial.println("Obstáculo detectado, esperando...");
@@ -356,7 +357,7 @@ void abrirBarrera() {
 }
 
 void cerrarBarrera() {
-    myServo.write(0);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
+    myServo.write(180);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
 }
 
 // Función para leer tarjetas RFID
@@ -370,25 +371,18 @@ void leerTarjetaRFID() {
     return; // Error al leer la tarjeta
   }
 
-  // Imprimir el NUID de la tarjeta leída
-  Serial.print(F("NUID de la tarjeta: "));
-  for (byte i = 0; i < 4; i++) {
-    Serial.print(rfid.uid.uidByte[i], HEX);
-    Serial.print(" ");
-  }
-  Serial.println();
-
   // Verificar si la tarjeta es conocida
   if (tarjetaEsConocida(rfid.uid.uidByte)) {
     lcdExito();
     abrirBarrera();
-    Serial.println("Tarjeta reconocida");
+    barreraAbierta = true;
+    //Serial.println("Tarjeta reconocida");
 
   // C:
     contadorAccesosCorrectos++;
   } else {
     lcdFallida();
-    Serial.println("Tarjeta no reconocida");
+    //Serial.println("Tarjeta no reconocida");
   }
 
   rfid.PICC_HaltA();  // Detener la lectura de la tarjeta
