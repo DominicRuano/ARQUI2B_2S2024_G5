@@ -133,14 +133,14 @@ void loop() {
     
     valorDistancia = distancia();
 
-    //ultrasonico(valorDistancia);
+    ultrasonico(valorDistancia);
     //leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
     
 
     // ===== Talanquera =====  
     controlarBarrera();  // funcion para controlar la barrera
 
-    //ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
+    ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
 
