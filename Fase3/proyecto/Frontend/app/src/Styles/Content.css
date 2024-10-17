@@ -1,0 +1,196 @@
+
+.grafica1, .grafica2, .grafica3, .grafica4, .grafica5 {
+    position: absolute;
+    width: 350px !important; 
+    height: 400px !important;
+}
+
+.grafica1 { /* gas */
+    top: 140px;  
+    left: 300px; 
+ 
+}
+
+.grafica2 { /* humedad */
+    top: 140px;
+    left: 700px;
+ 
+}
+
+.grafica3 { /* luminosidad */
+    top: 350px;
+    left: 500px;
+ 
+}
+
+.grafica4 {  /* proximidad */
+    top: 350px;
+    left: 950px;
+ 
+}
+
+.grafica5 {  /* temperatura */
+    top: 140px;
+    left: 1100px;
+ 
+}
+
+.boton {
+    position: absolute;
+    top: 580px; 
+    left: 590px; 
+}
+
+
+/* monitoreo*/
+.boton button {
+    background-color: #4c81af;
+    border: none;
+    color: white;
+    padding: 4px 100px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.boton button:hover {
+    background-color: #4575a0; /* Cambia de color al pasar el mouse */
+}
+
+.boton2 {
+    position: absolute;
+    top: 580px; 
+    left: 345px; 
+}
+
+
+.boton2 button {
+    background-color: #4c81af; 
+    border: none;
+    color: rgb(255, 255, 255);
+    padding: 4px 100px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.boton2 button:hover {
+    background-color: #4575a0; /* Cambia de color al pasar el mouse */
+}
+
+
+.datos {
+    position: absolute; 
+    top: 130px;
+    left: 350px; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 1050px;
+    height: 400px;
+}
+
+.datos input {
+    width: 90%;
+    padding: 20px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.datos button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 40px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.datos button:hover {
+    background-color: #45a049;
+}
+
+/* Pronostico*/
+.pronostico-card {
+    position: absolute;
+    top: 280px; 
+    left: 550px;  
+    width: 750px;
+    height: 300px;
+    background-color: #f3f3f3;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pronostico-card h3 {
+    font-size: 40px;
+}
+
+.pronostico-card .icon {
+    font-size: 150px;
+}
+
+.pronostico-card p {
+    font-size: 20px;
+    margin-top: 5px;
+}
+
+
+.forecast-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    background-color: #f0f0f0;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 1100px;
+    height: 470px;
+}
+
+.forecast-form-group {
+    display: inline-block;
+    margin-right: 20px;
+    transform: translate(20px, 30px); 
+}
+
+
+.forecast-select, .forecast-input {
+    width: 200px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.forecast-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    position: absolute; 
+    transform: translate(20px, 30px); 
+}
+
+.forecast-button:hover {
+    background-color: #0056b3;
+}
