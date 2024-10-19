@@ -11,7 +11,7 @@ const Login = () => {
 
     const handleLogin = async () => {
         try {
-            const response = await axios.post('http://localhost:5000/validateUser', { usuario, pin });
+            const response = await axios.post('http://100.24.10.27:5000/validateUser', { usuario, pin });
             
             if (response.data.accesoConcedido) {
                 const nuidMessage = JSON.stringify({ NUID: "0x19,0x7D,0xD1,0xB1" }); // NUID para acceso concedido
