@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 import mysql.connector
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 app = Flask(__name__)
 
@@ -25,6 +27,21 @@ def procesar_respuesta(sensor, valor):
     else:
         return {"sensor": sensor, "valor": "desconocido"}
 
+# Modelo de predicción
+def predecir(datos_historicos, nuevo_valor):
+    # Separar los datos históricos en variables X (independiente) e Y (dependiente)
+    X = np.array([d[0] for d in datos_historicos]).reshape(-1, 1)  # Aquí asumimos que la primera columna es el tiempo/día
+    y = np.array([d[1] for d in datos_historicos])  # Aquí asumimos que la segunda columna es el valor a predecir
+
+    # Crear un modelo de regresión lineal
+    modelo = LinearRegression()
+    modelo.fit(X, y)
+
+    # Realizar la predicción para el nuevo valor
+    prediccion = modelo.predict(np.array([[nuevo_valor]]))
+
+    return prediccion[0]
+
 # Ruta para recibir la solicitud JSON
 @app.route('/sensor', methods=['POST'])
 def obtener_mediciones():
@@ -42,7 +59,6 @@ def obtener_mediciones():
     cursor = conexion.cursor()
 
     # Ajustar las fechas para llamar al procedimiento almacenado
-    # Esto depende de los datos reales que tengas
     fecha_inicio = '2024-01-01'
     fecha_fin = '2024-12-31'
 
@@ -61,9 +77,13 @@ def obtener_mediciones():
         
         # Obtener el valor de la medición más reciente
         valor_reciente = data[-1][1]  # Aquí asumimos que 'valor' es la segunda columna en los resultados
+        
+        # Usar scikit-learn para predecir un nuevo valor
+        nuevo_valor = int(dia)  # Supongamos que 'dia' es un número que representa el día
+        valor_predicho = predecir(data, nuevo_valor)
 
-        # Procesar la respuesta según el sensor
-        respuesta = procesar_respuesta(sensor_nombre, valor_reciente)
+        # Procesar la respuesta con el valor predicho
+        respuesta = procesar_respuesta(sensor_nombre, valor_predicho)
 
     except mysql.connector.Error as err:
         return jsonify({"error": str(err)}), 500
