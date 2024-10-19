@@ -1,6 +1,10 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <SoftwareSerial.h>
+
+// Configuración de pines para SoftwareSerial
+SoftwareSerial espSerial(D6, D5);  // D6 = RX, D5 = TX
 
 // WiFi Credentials
 const char *ssid = "Galaxy A21s03A5";
@@ -18,17 +22,16 @@ const char *topicCalidadAire = "F3G5/calidadAire";
 const char *topicLuminosidad = "F3G5/luminosidad";
 const char *topicAccesos = "F3G5/Accesos";
 
-// Topics a suscribirse
-const char *topicControl = "F3G5/Control";
-const char *topicLedControl = "F3G5/LedControl";
-const char *topicRFID = "F3G5/RFID";
-
 // Cliente WiFi y MQTT
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+//variable que controla el acceso de los carros
+int accesos = 0;
+
 void setup() {
   Serial.begin(9600);
+  espSerial.begin(9600);  // Comunicación con el Arduino Mega
 
   // Conectar al Wi-Fi
   Serial.println("Conectando a Wi-Fi...");
@@ -55,10 +58,10 @@ void conectarMQTT() {
     if (client.connect(client_id.c_str())) {
       Serial.println("Conectado al broker MQTT");
 
-      // Suscribirse a los topics
-      client.subscribe(topicControl);
-      client.subscribe(topicLedControl);
-      client.subscribe(topicRFID);
+      // Suscribirse a los topics de control
+      client.subscribe("F3G5/Control");
+      client.subscribe("F3G5/LedControl");
+      client.subscribe("F3G5/RFID");
     } else {
       Serial.print("Fallo al conectar al broker MQTT. Estado: ");
       Serial.println(client.state());
@@ -67,17 +70,7 @@ void conectarMQTT() {
   }
 }
 
-void enviarDatosQuemados() {
-  // Crear JSON y enviar datos a varios topics
-  enviarJSON(topicHumedad, 45, "humedad");
-  enviarJSON(topicTemperatura, 25, "temperatura");
-  enviarJSON(topicProximidad, 10, "proximidad");
-  enviarJSON(topicCalidadAire, 400, "calidadAire");
-  enviarJSON(topicLuminosidad, 300, "luminosidad");
-  enviarJSON(topicAccesos, 5, "Accesos");
-}
-
-void enviarJSON(const char *topic, int valor, String name) {
+void enviarJSON(const char *topic, String valor, String name) {
   StaticJsonDocument<128> doc;
   doc[name] = valor;
 
@@ -93,15 +86,63 @@ void enviarJSON(const char *topic, int valor, String name) {
   }
 }
 
+void procesarMensajeArduino(String mensaje) {
+  // Crear un JSONDocument para parsear el mensaje
+  StaticJsonDocument<512> doc;
+
+  // Parsear el JSON recibido
+  DeserializationError error = deserializeJson(doc, mensaje);
+
+  if (error) {
+    Serial.print("Error al parsear JSON ESP: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  // Extraer y enviar datos a los topics correspondientes
+  if (doc.containsKey("Humedad")) {
+    enviarJSON(topicHumedad, String(doc["Humedad"].as<float>()), "humedad");
+  }
+  if (doc.containsKey("Temperatura")) {
+    enviarJSON(topicTemperatura, String(doc["Temperatura"].as<float>()), "temperatura");
+  }
+  if (doc.containsKey("PPMCO2")) {
+    enviarJSON(topicCalidadAire, String(doc["PPMCO2"].as<int>()), "calidadAire");
+  }
+  if (doc.containsKey("Luz")) {
+    enviarJSON(topicLuminosidad, String(doc["Luz"].as<int>()), "luminosidad");
+  }
+  if (doc.containsKey("Distancia")) {
+    enviarJSON(topicProximidad, String(doc["Distancia"].as<float>()), "proximidad");
+  }
+    
+  if (doc.containsKey("AccesosCorrectos")) {
+      if((doc["AccesosCorrectos"].as<int>()) != 0){
+        accesos += (doc["AccesosCorrectos"].as<int>());
+        enviarJSON(topicAccesos, String(accesos), "Accesos");
+      }
+  }
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Mensaje recibido en ");
+  
+  /*Serial.print("Mensaje recibido en ");
   Serial.print(topic);
   Serial.print(": ");
 
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
   }
-  Serial.println();
+  Serial.println();*/
+
+  String message = "";
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+
+    // Enviar el mensaje al Arduino Mega por SoftwareSerial
+  espSerial.println(String(message));
+
 }
 
 void loop() {
@@ -111,9 +152,13 @@ void loop() {
 
   client.loop();  // Mantener la conexión activa
 
-  // Enviar datos cada 5 segundos
-  enviarDatosQuemados();
-  delay(5000);  // Esperar 5 segundos antes de enviar nuevamente
+  // Leer datos desde el Arduino Mega
+  if (espSerial.available()) {
+    String mensaje = espSerial.readStringUntil('\n');
+    Serial.println("Mensaje recibido del Arduino: " + mensaje);
+    procesarMensajeArduino(mensaje);  // Procesar y enviar datos
+  }
+
+  
+  //delay(900);  // Pequeña espera para evitar saturación
 }
-
-

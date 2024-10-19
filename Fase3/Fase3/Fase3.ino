@@ -67,6 +67,10 @@ bool barreraAbierta = false;           // Estado inicial de la barrera: cerrada
 int umbralLuz = 200;                  // Umbral para encender/apagar el LED de iluminación (calibrar)
 
 
+//bool encender apagar luces
+bool luces = false;
+
+
 // ===== Modulo RFID =====
 byte NUIDsConocidos[][4] = { 
   {0x19, 0x7D, 0xD1, 0xB1}   // nuid (tarjeta azul)     // {0x39, 0x09, 0xFB, 0xB3},  // nuid (tarjeta blanca)
@@ -128,42 +132,7 @@ void loop() {
     valorInfrarrojo = 0;
     valorDistancia = 0;
 
-    // Verificar si hay datos desde el ESP8266
-    if (Serial.available()) {
-      String message = Serial.readStringUntil('\n');  // Leer mensaje completo
-      StaticJsonDocument<256> doc;
-
-      // Intentar parsear el mensaje JSON
-      DeserializationError error = deserializeJson(doc, message);
-      if (error) {
-          Serial.print("Error al parsear JSON: ");
-          Serial.println(error.c_str());
-          return;
-      }
-
-      // Ejecutar acciones según el topic recibido
-      if (doc.containsKey("ControlServo")) {
-          int servoPos = doc["ControlServo"];
-          myServo.write(servoPos);
-          //Serial.println("Servo movido a: " + String(servoPos));
-      }
-
-      if (doc.containsKey("LedState")) {
-          int ledState = doc["LedState"];
-          digitalWrite(pinLED, ledState);
-          //Serial.println("LED " + String(ledState ? "Encendido" : "Apagado"));
-      }
-
-      if (doc.containsKey("NUID")) {
-          const char* nuid = doc["NUID"];
-          //Serial.println("NUID recibido: " + String(nuid));
-
-          // abrir y cerrar la barrera automáticamente al recibir un NUID válido
-          abrirBarrera();
-          delay(1000);  // Mantener la barrera abierta por 1 segundos
-          cerrarBarrera();
-      }
-    }
+    
 
     leerDHT11();  
 
@@ -171,6 +140,12 @@ void loop() {
 
     valorDistancia = distancia();
     ultrasonico(valorDistancia);
+
+    // Verificar si hay datos desde el ESP8266
+    if (Serial.available()) {
+      String message = Serial.readStringUntil('\n');  // Leer mensaje completo
+      procesarMensajeESP(message);   
+    }
 
     // ===== Talanquera =====  
     controlarBarrera();  // funcion para controlar la barrera
@@ -183,20 +158,70 @@ void loop() {
     controlarLED(valorLuz, umbralLuz);
 
   //formateo de las salidas como json para enviar al esp8266, para que este lo envie al servidor
-    String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
+  String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
                       ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
                       ",\"Infrarrojo\":" + String(valorInfrarrojo) + ",\"Distancia\":" + String(valorDistancia) +
                       ",\"AccesosCorrectos\":" + String(contadorAccesosCorrectos) + "}";
   
   //PRUEBAS CON DATOS QUEMADOS:
-  /*String jsonData = "{\"Humedad\":" + String(100) + ",\"Temperatura\":" + String(110) +
-                    ",\"PPMCO2\":" + String(120) + ",\"Luz\":" + String(130) +
-                    ",\"Infrarrojo\":" + String(140)+"}";*/
+  /*String jsonData = "{\"Humedad\":" + String(22) + ",\"Temperatura\":" + String(50) +
+                      ",\"PPMCO2\":" + String(120) + ",\"Luz\":" + String(300) +
+                      ",\"Infrarrojo\":" + String(1) + ",\"Distancia\":" + String(15) +
+                      ",\"AccesosCorrectos\":" + String(1) + "}";*/
 
   Serial.println(jsonData);
-  delay(500);
+  delay(2000);
   lcdInicio();
+  contadorAccesosCorrectos = 0;
 }
+
+void procesarMensajeESP(String mensaje){
+
+  // Crear un JSONDocument para parsear el mensaje
+  StaticJsonDocument<512> doc;
+
+  // Parsear el JSON recibido
+  DeserializationError error = deserializeJson(doc, mensaje);
+
+  if (error) {
+    Serial.print("Error al parsear JSON en el arduino: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  if (doc.containsKey("LedState")) {
+    if(doc["LedState"].as<int>() == 1){
+      digitalWrite(pinLED, HIGH);
+      luces = true;
+    }else{
+      digitalWrite(pinLED, LOW);
+      luces = false;
+    }
+  }
+
+  if (doc.containsKey("ControlServo")) {
+    if(doc["ControlServo"].as<int>() == 90){
+      contadorAccesosCorrectos=1;
+      myServo.write(90); //abrir barrera      
+      delay(3000);
+      myServo.write(180); //cerrar barrera 
+    }
+  }
+
+  if (doc.containsKey("NUID")) {
+    if(doc["NUID"].as<String>() == "0x19,0x7D,0xD1,0xB1"){
+      contadorAccesosCorrectos=1;
+      lcdExito();
+      myServo.write(90); //abrir barrera      
+      delay(3000);
+      myServo.write(180); //cerrar barrera 
+    }
+  }
+
+}
+
+
+
 
 float CalcularResistenciaSensor(int valor_adc) {
     return (((float)VALOR_RL * (1023 - valor_adc) / valor_adc));
@@ -245,10 +270,13 @@ int  SensorCantidadLuz() {
 
 // ====== iluminacion general ===== 
 void controlarLED(int valorLuz, int umbral) {
-  if (valorLuz < umbral) {
-    digitalWrite(pinLED, HIGH);                         // Si no hay suficiente luz, encender el LED
-  } else {
-    digitalWrite(pinLED, LOW);                          // Si hay suficiente luz, apagar el LED
+  if(!luces){
+    if (valorLuz < umbral) {
+      digitalWrite(pinLED, HIGH);                         // Si no hay suficiente luz, encender el LED
+    } else {
+      digitalWrite(pinLED, LOW);                          // Si hay suficiente luz, apagar el LED
+      luces = false;
+    }
   }
 }
 
@@ -396,8 +424,9 @@ void leerTarjetaRFID() {
     abrirBarrera();
     barreraAbierta = true;
   // C:
-    contadorAccesosCorrectos++;
+    contadorAccesosCorrectos=1;
   } else {
+    contadorAccesosCorrectos=0;
     lcdFallida();
   }
 
