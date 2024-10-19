@@ -11,7 +11,7 @@ const GasChart = () => {
     const [data, setData] = useState({ labels: [], datasets: [{ label: 'Co2', data: [] }] });
     
     useEffect(() => {
-        const client = mqtt.connect('ws://localhost:8083/mqtt', { keepalive: 60 });
+        const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
         
         client.on('connect', () => {

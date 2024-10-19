@@ -3,10 +3,7 @@ import React from 'react';
 import mqtt from 'mqtt';
 
 
-const client = mqtt.connect('ws://localhost:8083/mqtt', {
-    path: '/mqtt',  
-    keepalive: 60, 
-});
+const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
 
 const ServoControl = () => {

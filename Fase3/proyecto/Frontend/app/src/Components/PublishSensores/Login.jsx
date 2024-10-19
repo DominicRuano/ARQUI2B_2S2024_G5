@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import mqtt from 'mqtt';
 import axios from 'axios';
 
-const client = mqtt.connect('ws://localhost:8083/mqtt', { keepalive: 60 });
+const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
 const Login = () => {
     const [usuario, setUsuario] = useState('');

@@ -11,7 +11,7 @@ const LightChart = () => {
     const [data, setData] = useState({ labels: [], datasets: [{ label: 'Luminosidad', data: [] }] });
     
     useEffect(() => {
-        const client = mqtt.connect('ws://localhost:8083/mqtt', { keepalive: 60 });
+        const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
         client.on('connect', () => {
             client.subscribe('F3G5/luminosidad', (err) => {

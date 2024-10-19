@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import mqtt from 'mqtt';
 import PronosticoCard from './PronosticoCard';
 
-const client = mqtt.connect('ws://localhost:8083/mqtt', { keepalive: 60 });
+const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
 const Pronostico = () => {
     const [sensorSeleccionado, setSensorSeleccionado] = useState('');
@@ -10,6 +10,12 @@ const Pronostico = () => {
     const [resultadoPronostico, setResultadoPronostico] = useState({});
 
     const enviarPronostico = () => {
+        const dia = parseInt(diaSeleccionado);
+        if (dia > 8) {
+            alert('No se puede realizar la proyección para un día mayor a 8.');
+            return;
+        }
+
         const message = JSON.stringify({ dia: diaSeleccionado, sensor: sensorSeleccionado });
         client.publish('F3G5/Pronostico', message, { qos: 0 }, (error) => {
             if (error) {
@@ -20,7 +26,6 @@ const Pronostico = () => {
         });
     };
 
-
     client.subscribe('F3G5/Pronostico/Resultado', (error) => {
         if (error) {
             console.error('Error al suscribirse:', error);
@@ -29,7 +34,6 @@ const Pronostico = () => {
         }
     });
 
-    // Recepción del mensaje con el pronóstico
     client.on('message', (topic, message) => {
         if (topic === 'F3G5/Pronostico/Resultado') {
             const forecastData = JSON.parse(message.toString());
@@ -43,9 +47,9 @@ const Pronostico = () => {
             <div className="forecast-form-group">
                 <label>Sensor:</label>
                 <select className="forecast-select" value={sensorSeleccionado} onChange={(e) => setSensorSeleccionado(e.target.value)}>
-                    <option value="">Seleccionar </option>
+                    <option value="">Seleccionar</option>
                     <option value="mq">MQ</option>
-                    <option value="dth">DHT</option>
+                    <option value="dht">DHT</option>
                     <option value="ldr">LDR</option>
                 </select>
             </div>
@@ -58,7 +62,6 @@ const Pronostico = () => {
                     value={diaSeleccionado}
                     onChange={(e) => setDiaSeleccionado(e.target.value)}
                     min="1"
-                    max="31"
                     placeholder="Día"
                 />
             </div>

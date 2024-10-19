@@ -5,7 +5,7 @@ import mqtt from 'mqtt';
 
 const AlertaVehiculo = () => {
   useEffect(() => {
-    const client = mqtt.connect('ws://localhost:8083/mqtt');
+    const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
     client.on('connect', () => {
       client.subscribe('F3G5/Accesos', (err) => {
