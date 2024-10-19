@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import mqtt from 'mqtt';
 import { FaLightbulb } from "react-icons/fa";
 
-const client = mqtt.connect('ws://localhost:8083/mqtt', {
-    path: '/mqtt',  
-    keepalive: 60, 
-});
+const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt', { keepalive: 60 });
 
 const LedControl = () => {
     const [isOn, setIsOn] = useState(false);
