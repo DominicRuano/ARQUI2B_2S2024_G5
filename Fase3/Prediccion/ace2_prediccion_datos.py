@@ -1,9 +1,5 @@
-from flask import Flask, request, jsonify
 import mysql.connector
-from sklearn.linear_model import LinearRegression
-import numpy as np
-
-app = Flask(__name__)
+import json
 
 # Conectar a la base de datos MySQL
 def obtener_conexion():
@@ -20,40 +16,23 @@ def procesar_respuesta(sensor, valor):
     if sensor == 'mq':
         return {"sensor": sensor, "valor": {"gas": valor}}
     elif sensor == 'dht':
-        # Aquí asumimos que el valor es una tupla de (temperatura, humedad)
+        # Asumimos que el valor es una tupla de (temperatura, humedad)
         return {"sensor": sensor, "valor": {"temperatura": valor[0], "humedad": valor[1]}}
     elif sensor == 'ldr':
         return {"sensor": sensor, "valor": {"luminosidad": valor}}
     else:
         return {"sensor": sensor, "valor": "desconocido"}
 
-# Modelo de predicción
-def predecir(datos_historicos, nuevo_valor):
-    # Separar los datos históricos en variables X (independiente) e Y (dependiente)
-    X = np.array([d[0] for d in datos_historicos]).reshape(-1, 1)  # Aquí asumimos que la primera columna es el tiempo/día
-    y = np.array([d[1] for d in datos_historicos])  # Aquí asumimos que la segunda columna es el valor a predecir
-
-    # Crear un modelo de regresión lineal
-    modelo = LinearRegression()
-    modelo.fit(X, y)
-
-    # Realizar la predicción para el nuevo valor
-    prediccion = modelo.predict(np.array([[nuevo_valor]]))
-
-    return prediccion[0]
-
-# Ruta para recibir la solicitud JSON
-@app.route('/sensor', methods=['POST'])
-def obtener_mediciones():
-    # Obtener los datos del JSON recibido
-    datos = request.get_json()
+# Método para obtener las mediciones
+def obtener_mediciones(datos):
+    # Obtener los parámetros del JSON
     dia = datos.get('dia')
     sensor_nombre = datos.get('sensor')
-    
+
     # Validar que los parámetros existan
     if not dia or not sensor_nombre:
-        return jsonify({"error": "Faltan parámetros"}), 400
-    
+        return {"error": "Faltan parámetros"}
+
     # Conectar a la base de datos
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -62,7 +41,7 @@ def obtener_mediciones():
     fecha_inicio = '2024-01-01'
     fecha_fin = '2024-12-31'
 
-    # Llamar al procedimiento almacenado con las fechas definidas
+    # Llamar al procedimiento almacenado
     query = "CALL obtenerMediciones(%s, %s)"
     
     try:
@@ -73,28 +52,20 @@ def obtener_mediciones():
 
         # Verificar si se obtuvieron resultados
         if not data:
-            return jsonify({"error": "No se encontraron datos para el sensor y día solicitados"}), 404
+            return {"error": "No se encontraron datos para el sensor y día solicitados"}
         
         # Obtener el valor de la medición más reciente
-        valor_reciente = data[-1][1]  # Aquí asumimos que 'valor' es la segunda columna en los resultados
-        
-        # Usar scikit-learn para predecir un nuevo valor
-        nuevo_valor = int(dia)  # Supongamos que 'dia' es un número que representa el día
-        valor_predicho = predecir(data, nuevo_valor)
+        valor_reciente = data[-1][1]  # Asumimos que 'valor' es la segunda columna
 
-        # Procesar la respuesta con el valor predicho
-        respuesta = procesar_respuesta(sensor_nombre, valor_predicho)
+        # Procesar la respuesta según el sensor
+        respuesta = procesar_respuesta(sensor_nombre, valor_reciente)
 
     except mysql.connector.Error as err:
-        return jsonify({"error": str(err)}), 500
+        return {"error": str(err)}
 
     finally:
         cursor.close()
         conexion.close()
 
-    # Devolver la respuesta en formato JSON
-    return jsonify(respuesta)
-
-# Ejecutar la aplicación
-if __name__ == '__main__':
-    app.run(debug=True)
+    # Devolver la respuesta
+    return respuesta
