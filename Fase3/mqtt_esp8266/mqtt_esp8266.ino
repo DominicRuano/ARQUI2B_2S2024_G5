@@ -1,16 +1,49 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <SoftwareSerial.h>
+#include <ArduinoJson.h>
 
 SoftwareSerial espSerial(D6, D5);  // D6 = RX, D5 = TX
 
 // WiFi
-const char *ssid = "Galaxy A21s03A5"; // Enter your Wi-Fi name
-const char *password = "Doju1975@$1234";  // Enter Wi-Fi password
+const char *ssid = "Galaxy A21s03A5"; // Wi-Fi name
+const char *password = "Doju1975@$1234";  // Wi-Fi password
 
 // MQTT Broker
 const char *mqtt_broker = "192.168.56.14";
 const char *topic = "Fase3G5/Test";
+
+//diferentes topics a publicar
+
+/*
+* F3G5/humedad
+* F3G5/temperatura
+* F3G5/proximidad
+* F3G5/calidadAire
+* F3G5/luminosidad
+* F3G5/Accesos
+*/
+
+const char *topicHumedad = "F3G5/humedad";
+const char *topicTemperatura = "F3G5/temperatura";
+const char *topicProximidad = "F3G5/proximidad";
+const char *topicCalidadAire = "F3G5/calidadAire";
+const char *topicLuminosidad = "F3G5/luminosidad";
+const char *topicAccesos = "F3G5/Accesos";
+
+
+//topics a suscribirse 
+/*
+* F3G5/Control
+* F3G5/LedControl
+* F3G5/RFID
+*/
+
+const char *topicControl = "F3G5/Control";
+const char *topicLedControl = "F3G5/LedControl";
+const char *topicRfid = "F3G5/RFID";
+
+
 const char *mqtt_username = "";
 const char *mqtt_password = "";
 const int mqtt_port = 1883;
@@ -45,32 +78,75 @@ void setup() {
             delay(2000);
         }
     }
-    // Publish and subscribe
-    client.publish(topic, "Hi, I'm ESP32 ^^");
-    //client.subscribe(topic);
+
+    //subs a los topics
+    client.subscribe(topicControl);
+    client.subscribe(topicLedControl);
+    client.subscribe(topicRfid);
+
 }
 
 void callback(char *topic, byte *payload, unsigned int length) {
-    Serial.print("Message arrived in topic: ");
-    Serial.println(topic);
-    Serial.print("Message:");
+
+    String message = "";
     for (int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
+        message += (char)payload[i];
     }
-    Serial.println();
-    Serial.println("-----------------------");
+
+    // Enviar el mensaje al Arduino Mega por SoftwareSerial
+    espSerial.println(String(topic) + ":" + message);
+    //Serial.println("Mensaje enviado al Arduino: " + message);
+
 }
 
 void loop() {
+
+  client.loop(); //para mantener la conexion mqtt activa
+
+
   if (espSerial.available()) { 
     String mensaje = espSerial.readStringUntil('\n'); // Lee el mensaje completo hasta el salto de línea
-    //Serial.println("Mensaje recibido del serial:");
-    //Serial.println(mensaje);
 
-    // Convertir el String a const char*
-    client.publish(topic, mensaje.c_str()); 
+    //json que regresa (es algo así):
 
-    delay(500);
+    /*
+    String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
+                      ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
+                      ",\"Infrarrojo\":" + String(valorInfrarrojo) + ",\"Distancia\":" + String(valorDistancia) +
+                      ",\"AccesosCorrectos\":" + String(contadorAccesosCorrectos) + "}";
+    */
+
+    //buffer estático para parsear el json
+    StaticJsonDocument<256> doc;
+
+    //parseear el json
+    DeserializationError error = deserializeJson(doc, mensaje);
+    if(error){
+      Serial.print("JSON parse failed: ");
+      Serial.println(error.c_str());
+      return;
+    }
+
+    // Publicar en los topics MQTT según los datos recibidos
+    if (doc.containsKey("Humedad")) {
+        client.publish(topicHumedad, String(doc["Humedad"]).c_str());
+    }
+    if (doc.containsKey("Temperatura")) {
+        client.publish(topicTemperatura, String(doc["Temperatura"]).c_str());
+    }
+    if (doc.containsKey("PPMCO2")) {
+        client.publish(topicCalidadAire, String(doc["PPMCO2"]).c_str());
+    }
+    if (doc.containsKey("Luminosidad")) {
+        client.publish(topicLuminosidad, String(doc["Luminosidad"]).c_str());
+    }
+    if (doc.containsKey("Distancia")) {
+        client.publish(topicProximidad, String(doc["Distancia"]).c_str());
+    }
+    if (doc.containsKey("AccesosCorrectos")) {
+        client.publish(topicAccesos, String(doc["AccesosCorrectos"]).c_str());
+    }
+
+    delay(1000);  //para que no se sature
   }
-  client.loop();
 }

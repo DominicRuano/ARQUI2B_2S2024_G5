@@ -6,6 +6,8 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
+#include <ArduinoJson.h>
+
 const int ledCalibracion = 13;                 // led de calibracion del MQ, led no conectado (revisar)             
 const int PIN_MQ = A0;                                
 int VALOR_RL = 1;                                     
@@ -109,14 +111,14 @@ void setup() {
 
   // ===== Talanquera =====           Inicialización del servo      
   myServo.attach(servoPin);     //  servomotor en el pin 12
-  myServo.write(0);             // posición inicial de 0grados (cerrado)
+  myServo.write(180);             // posición inicial de 180grados (cerrado)
 
   // ===== Lector rfid =====
   SPI.begin();
   rfid.PCD_Init();
-  Serial.println(F("Esperando tarjeta RFID..."));
+  //Serial.println(F("Esperando tarjeta RFID..."));
 
-  lcdInicio();
+  //lcdInicio();
   delay(1000);
 }
 
@@ -126,28 +128,59 @@ void loop() {
     valorInfrarrojo = 0;
     valorDistancia = 0;
 
+    // Verificar si hay datos desde el ESP8266
+    if (Serial.available()) {
+      String message = Serial.readStringUntil('\n');  // Leer mensaje completo
+      StaticJsonDocument<256> doc;
+
+      // Intentar parsear el mensaje JSON
+      DeserializationError error = deserializeJson(doc, message);
+      if (error) {
+          Serial.print("Error al parsear JSON: ");
+          Serial.println(error.c_str());
+          return;
+      }
+
+      // Ejecutar acciones según el topic recibido
+      if (doc.containsKey("ControlServo")) {
+          int servoPos = doc["ControlServo"];
+          myServo.write(servoPos);
+          //Serial.println("Servo movido a: " + String(servoPos));
+      }
+
+      if (doc.containsKey("LedState")) {
+          int ledState = doc["LedState"];
+          digitalWrite(pinLED, ledState);
+          //Serial.println("LED " + String(ledState ? "Encendido" : "Apagado"));
+      }
+
+      if (doc.containsKey("NUID")) {
+          const char* nuid = doc["NUID"];
+          //Serial.println("NUID recibido: " + String(nuid));
+
+          // abrir y cerrar la barrera automáticamente al recibir un NUID válido
+          abrirBarrera();
+          delay(1000);  // Mantener la barrera abierta por 1 segundos
+          cerrarBarrera();
+      }
+    }
+
     leerDHT11();  
 
     leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente 
 
     valorDistancia = distancia();
-
-    //ultrasonico(valorDistancia);
-    leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
-    
+    ultrasonico(valorDistancia);
 
     // ===== Talanquera =====  
     controlarBarrera();  // funcion para controlar la barrera
 
-    //ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
+    ppmCO2 = ObtenerPorcentajeGas(LeerSensor(PIN_MQ)/Ro, GAS_CO2);
     valorLuz = SensorCantidadLuz();
     valorInfrarrojo = Infrarrojo();
 
-    leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
-
     // ===== Controlar el LED de iluminación =====
     controlarLED(valorLuz, umbralLuz);
-
 
   //formateo de las salidas como json para enviar al esp8266, para que este lo envie al servidor
     String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
@@ -161,13 +194,6 @@ void loop() {
                     ",\"Infrarrojo\":" + String(140)+"}";*/
 
   Serial.println(jsonData);
-  // Serial.print("valor distancia:");
-  // Serial.println(valorDistancia);
-
-  lcdInicio();
-  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
-  delay(500);
-  leerTarjetaRFID();  // Llamamos a la función que lee la tarjeta continuamente
   delay(500);
   lcdInicio();
 }
@@ -217,17 +243,13 @@ int  SensorCantidadLuz() {
   return valorLuz;
 }
 
-// ====== iluminacion general ===== revisar funcionamiento con el ldr la ultima vez funcionaban solo las leds pero no con la ldr
+// ====== iluminacion general ===== 
 void controlarLED(int valorLuz, int umbral) {
-
   if (valorLuz < umbral) {
     digitalWrite(pinLED, HIGH);                         // Si no hay suficiente luz, encender el LED
-    //Serial.println("LED Encendido (iluminación)");
   } else {
     digitalWrite(pinLED, LOW);                          // Si hay suficiente luz, apagar el LED
-    //Serial.println("LED Apagado (iluminación)");
   }
-  //delay(1000);
 }
 
 //dht
@@ -239,7 +261,6 @@ void leerDHT11() {
 
   // Verificar si hay errores al leer el sensor
   if (isnan(humedad) || isnan(temperatura)) {
-    //Serial.println("Error al leer el sensor DHT11");
     humedad = humedad2;
     temperatura = temperatura2;
   }
@@ -331,9 +352,9 @@ void ultrasonico(int d) {
 
 // ===== Talanquera =====
 void controlarBarrera() {
-    if (!barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
-        abrirBarrera();                                 // abre a 90 grados
-        barreraAbierta = true;                          // Marca la barrera como abierta
+    if (barreraAbierta) {  // Abre la barrera si se detecta una tarjeta valida, barrera cerrada
+        abrirBarrera(); 
+        barreraAbierta = true;
     }
 
     // Lee el estado del sensor infrarrojo
@@ -341,11 +362,11 @@ void controlarBarrera() {
 
     // Cierre de la barrera tras verificar que no hay obstaculos
     if (barreraAbierta && irValue == HIGH) {  
-        delay(5000);                                   // Espera 5 segundos para permitir el paso completo del auto
+        delay(1000);                                  
         cerrarBarrera(); 
+        delay(1000);
         barreraAbierta = false;                        // Marca la barrera como cerrada
     } else if (barreraAbierta && irValue == LOW) {
-      //Serial.println("Obstáculo detectado, esperando...");
       barreraAbierta = true;                         // La barrera permanece abierta si se detecta un obstaculo en el infrarojo (0)
     }
 }
@@ -356,13 +377,12 @@ void abrirBarrera() {
 }
 
 void cerrarBarrera() {
-    myServo.write(0);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
+    myServo.write(180);                                  // Mueve el servomotor a 0 grados para cerrar la barrera
 }
 
 // Función para leer tarjetas RFID
 void leerTarjetaRFID() {
   if (!rfid.PICC_IsNewCardPresent()) {
-    //Serial.println("No hay tarjeta presente");
     return;
   }
 
@@ -370,25 +390,15 @@ void leerTarjetaRFID() {
     return; // Error al leer la tarjeta
   }
 
-  // Imprimir el NUID de la tarjeta leída
-  Serial.print(F("NUID de la tarjeta: "));
-  for (byte i = 0; i < 4; i++) {
-    Serial.print(rfid.uid.uidByte[i], HEX);
-    Serial.print(" ");
-  }
-  Serial.println();
-
   // Verificar si la tarjeta es conocida
   if (tarjetaEsConocida(rfid.uid.uidByte)) {
     lcdExito();
     abrirBarrera();
-    Serial.println("Tarjeta reconocida");
-
+    barreraAbierta = true;
   // C:
     contadorAccesosCorrectos++;
   } else {
     lcdFallida();
-    Serial.println("Tarjeta no reconocida");
   }
 
   rfid.PICC_HaltA();  // Detener la lectura de la tarjeta
