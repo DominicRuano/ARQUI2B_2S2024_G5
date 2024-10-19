@@ -1,29 +1,16 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 
-SoftwareSerial espSerial(D6, D5);  // D6 = RX, D5 = TX
-
-// WiFi
-const char *ssid = "Galaxy A21s03A5"; // Wi-Fi name
-const char *password = "Doju1975@$1234";  // Wi-Fi password
+// WiFi Credentials
+const char *ssid = "Galaxy A21s03A5";
+const char *password = "Doju1975@$1234";
 
 // MQTT Broker
-const char *mqtt_broker = "192.168.56.14";
-const char *topic = "Fase3G5/Test";
+const char *mqtt_broker = "test.mosquitto.org";
+const int mqtt_port = 1883;  // Puerto estándar MQTT
 
-//diferentes topics a publicar
-
-/*
-* F3G5/humedad
-* F3G5/temperatura
-* F3G5/proximidad
-* F3G5/calidadAire
-* F3G5/luminosidad
-* F3G5/Accesos
-*/
-
+// Topics a publicar
 const char *topicHumedad = "F3G5/humedad";
 const char *topicTemperatura = "F3G5/temperatura";
 const char *topicProximidad = "F3G5/proximidad";
@@ -31,122 +18,102 @@ const char *topicCalidadAire = "F3G5/calidadAire";
 const char *topicLuminosidad = "F3G5/luminosidad";
 const char *topicAccesos = "F3G5/Accesos";
 
-
-//topics a suscribirse 
-/*
-* F3G5/Control
-* F3G5/LedControl
-* F3G5/RFID
-*/
-
+// Topics a suscribirse
 const char *topicControl = "F3G5/Control";
 const char *topicLedControl = "F3G5/LedControl";
-const char *topicRfid = "F3G5/RFID";
+const char *topicRFID = "F3G5/RFID";
 
-
-const char *mqtt_username = "";
-const char *mqtt_password = "";
-const int mqtt_port = 1883;
-
+// Cliente WiFi y MQTT
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 void setup() {
+  Serial.begin(9600);
 
-    Serial.begin(9600); // Inicializa la comunicación serial para depuración
-    espSerial.begin(9600);   // Comunicación con el Arduino Mega
-    delay(1000);
-    // Connecting to a WiFi network
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.println("Connecting to WiFi..");
-    }
-    Serial.println("Connected to the Wi-Fi network");
-    //connecting to a mqtt broker
-    client.setServer(mqtt_broker, mqtt_port);
-    client.setCallback(callback);
-    while (!client.connected()) {
-        String client_id = "esp32-client-";
-        client_id += String(WiFi.macAddress());
-        Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
-        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-            Serial.println("Public EMQX MQTT broker connected");
-        } else {
-            Serial.print("failed with state ");
-            Serial.print(client.state());
-            delay(2000);
-        }
-    }
+  // Conectar al Wi-Fi
+  Serial.println("Conectando a Wi-Fi...");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWi-Fi conectado");
 
-    //subs a los topics
-    client.subscribe(topicControl);
-    client.subscribe(topicLedControl);
-    client.subscribe(topicRfid);
+  // Configurar el cliente MQTT
+  client.setServer(mqtt_broker, mqtt_port);
+  client.setCallback(callback);  // Asignar función de callback
 
+  conectarMQTT();
 }
 
-void callback(char *topic, byte *payload, unsigned int length) {
+void conectarMQTT() {
+  Serial.print("Conectando al broker MQTT...");
 
-    String message = "";
-    for (int i = 0; i < length; i++) {
-        message += (char)payload[i];
+  while (!client.connected()) {
+    String client_id = "ESP8266Client-" + String(WiFi.macAddress());
+
+    if (client.connect(client_id.c_str())) {
+      Serial.println("Conectado al broker MQTT");
+
+      // Suscribirse a los topics
+      client.subscribe(topicControl);
+      client.subscribe(topicLedControl);
+      client.subscribe(topicRFID);
+    } else {
+      Serial.print("Fallo al conectar al broker MQTT. Estado: ");
+      Serial.println(client.state());
+      delay(2000);  // Espera antes de reintentar
     }
+  }
+}
 
-    // Enviar el mensaje al Arduino Mega por SoftwareSerial
-    espSerial.println(String(topic) + ":" + message);
-    //Serial.println("Mensaje enviado al Arduino: " + message);
+void enviarDatosQuemados() {
+  // Crear JSON y enviar datos a varios topics
+  enviarJSON(topicHumedad, 45, "humedad");
+  enviarJSON(topicTemperatura, 25, "temperatura");
+  enviarJSON(topicProximidad, 10, "proximidad");
+  enviarJSON(topicCalidadAire, 400, "calidadAire");
+  enviarJSON(topicLuminosidad, 300, "luminosidad");
+  enviarJSON(topicAccesos, 5, "Accesos");
+}
 
+void enviarJSON(const char *topic, int valor, String name) {
+  StaticJsonDocument<128> doc;
+  doc[name] = valor;
+
+  char buffer[128];
+  serializeJson(doc, buffer);
+
+  if (client.publish(topic, buffer)) {
+    Serial.print("JSON enviado correctamente en ");
+    Serial.println(topic);
+  } else {
+    Serial.print("Error al enviar JSON en ");
+    Serial.println(topic);
+  }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Mensaje recibido en ");
+  Serial.print(topic);
+  Serial.print(": ");
+
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
 }
 
 void loop() {
-
-  client.loop(); //para mantener la conexion mqtt activa
-
-
-  if (espSerial.available()) { 
-    String mensaje = espSerial.readStringUntil('\n'); // Lee el mensaje completo hasta el salto de línea
-
-    //json que regresa (es algo así):
-
-    /*
-    String jsonData = "{\"Humedad\":" + String(humedad) + ",\"Temperatura\":" + String(temperatura) +
-                      ",\"PPMCO2\":" + String(ppmCO2) + ",\"Luz\":" + String(valorLuz) +
-                      ",\"Infrarrojo\":" + String(valorInfrarrojo) + ",\"Distancia\":" + String(valorDistancia) +
-                      ",\"AccesosCorrectos\":" + String(contadorAccesosCorrectos) + "}";
-    */
-
-    //buffer estático para parsear el json
-    StaticJsonDocument<256> doc;
-
-    //parseear el json
-    DeserializationError error = deserializeJson(doc, mensaje);
-    if(error){
-      Serial.print("JSON parse failed: ");
-      Serial.println(error.c_str());
-      return;
-    }
-
-    // Publicar en los topics MQTT según los datos recibidos
-    if (doc.containsKey("Humedad")) {
-        client.publish(topicHumedad, String(doc["Humedad"]).c_str());
-    }
-    if (doc.containsKey("Temperatura")) {
-        client.publish(topicTemperatura, String(doc["Temperatura"]).c_str());
-    }
-    if (doc.containsKey("PPMCO2")) {
-        client.publish(topicCalidadAire, String(doc["PPMCO2"]).c_str());
-    }
-    if (doc.containsKey("Luminosidad")) {
-        client.publish(topicLuminosidad, String(doc["Luminosidad"]).c_str());
-    }
-    if (doc.containsKey("Distancia")) {
-        client.publish(topicProximidad, String(doc["Distancia"]).c_str());
-    }
-    if (doc.containsKey("AccesosCorrectos")) {
-        client.publish(topicAccesos, String(doc["AccesosCorrectos"]).c_str());
-    }
-
-    delay(1000);  //para que no se sature
+  if (!client.connected()) {
+    conectarMQTT();  // Intentar reconectar si se pierde la conexión
   }
+
+  client.loop();  // Mantener la conexión activa
+
+  // Enviar datos cada 5 segundos
+  enviarDatosQuemados();
+  delay(5000);  // Esperar 5 segundos antes de enviar nuevamente
 }
+
+
