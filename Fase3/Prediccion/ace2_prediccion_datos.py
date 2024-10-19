@@ -16,7 +16,7 @@ def procesar_respuesta(sensor, valor):
     if sensor == 'mq':
         return {"sensor": sensor, "valor": {"gas": valor}}
     elif sensor == 'dht':
-        # Asumimos que el valor es una tupla de (temperatura, humedad)
+        # una tupla de (temperatura, humedad)
         return {"sensor": sensor, "valor": {"temperatura": valor[0], "humedad": valor[1]}}
     elif sensor == 'ldr':
         return {"sensor": sensor, "valor": {"luminosidad": valor}}
